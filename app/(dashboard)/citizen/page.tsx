@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { registerPropertyOnChain } from "@/lib/blockchain";
@@ -55,6 +56,17 @@ export default function CitizenDashboard() {
   const [kycOtp, setKycOtp] = useState("");
   const [kycOtpSent, setKycOtpSent] = useState(false);
   const [kycVerified, setKycVerified] = useState(false);
+  const [kycMaskedPhone, setKycMaskedPhone] = useState("");
+  const [simulatedOtp, setSimulatedOtp] = useState("");
+  const [showSmsBanner, setShowSmsBanner] = useState(false);
+  const [kycLoading, setKycLoading] = useState(false);
+
+  useEffect(() => {
+    if (formOpen && user?.aadhaarHash) {
+      const cleanAadhaar = user.aadhaarHash.replace("aadhaar_", "");
+      setKycAadhaar(cleanAadhaar);
+    }
+  }, [formOpen, user]);
 
   // Step 2: Details State
   const [surveyNum, setSurveyNum] = useState("");
@@ -138,22 +150,65 @@ export default function CitizenDashboard() {
     setProgressPercent(prev * 25);
   };
 
-  // Step 1: Aadhaar OTP simulation
-  const handleSendKycOtp = () => {
-    if (kycAadhaar.replace(/\s/g, "").length !== 12) {
-      setFormError("Aadhaar Number must be 12 digits.");
+  // Step 1: Aadhaar OTP verification
+  const handleSendKycOtp = async () => {
+    const cleanAadhaar = kycAadhaar.replace(/\s/g, "");
+    if (cleanAadhaar.length !== 12 || isNaN(Number(cleanAadhaar))) {
+      setFormError("Please enter a valid 12-digit Aadhaar Number.");
       return;
     }
     setFormError("");
-    setKycOtpSent(true);
+    setKycLoading(true);
+    try {
+      const res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setFormError(data.error || "Aadhaar Number is not registered in the system.");
+        return;
+      }
+
+      setKycMaskedPhone(data.phone);
+      if (data.simulatedOtp) {
+        setSimulatedOtp(data.simulatedOtp);
+        setShowSmsBanner(true);
+      } else {
+        setSimulatedOtp("");
+        setShowSmsBanner(false);
+      }
+      setKycOtpSent(true);
+    } catch (err) {
+      setFormError("Failed to connect to verification server.");
+    } finally {
+      setKycLoading(false);
+    }
   };
 
-  const handleVerifyKycOtp = () => {
-    if (kycOtp === "123456" || kycOtp === "1234") {
+  const handleVerifyKycOtp = async () => {
+    setFormError("");
+    setKycLoading(true);
+    const cleanAadhaar = kycAadhaar.replace(/\s/g, "");
+
+    try {
+      const res = await fetch("/api/user/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aadhaar: cleanAadhaar, otp: kycOtp }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFormError(data.error || "Incorrect OTP. Please check the code and try again.");
+        return;
+      }
+
       setKycVerified(true);
+      setShowSmsBanner(false);
       setFormError("");
-    } else {
-      setFormError("Invalid code. Enter '123456' for testing.");
+    } catch (err) {
+      setFormError("An error occurred during verification.");
+    } finally {
+      setKycLoading(false);
     }
   };
 
@@ -266,6 +321,9 @@ export default function CitizenDashboard() {
     setKycOtp("");
     setKycOtpSent(false);
     setKycVerified(false);
+    setKycMaskedPhone("");
+    setSimulatedOtp("");
+    setShowSmsBanner(false);
     setSurveyNum("");
     setArea("");
     setLocation("");
@@ -315,8 +373,37 @@ export default function CitizenDashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative">
       <Navbar />
+
+      {/* Simulated Phone Push Notification for OTP */}
+      {showSmsBanner && simulatedOtp && (
+        <motion.div
+          initial={{ y: -80, opacity: 0, scale: 0.95 }}
+          animate={{ y: 24, opacity: 1, scale: 1 }}
+          exit={{ y: -80, opacity: 0, scale: 0.95 }}
+          className="fixed top-0 left-1/2 -translate-x-1/2 max-w-sm w-[90%] bg-slate-900/95 text-white backdrop-blur-xl border-[0.5px] border-white/10 p-4 rounded-card shadow-2xl z-[9999] flex items-start space-x-3 text-xs"
+        >
+          <div className="p-2 rounded-element bg-brand flex-shrink-0 text-white shadow-md">
+            <IconFingerprint className="w-5 h-5" />
+          </div>
+          <div className="flex-grow space-y-1">
+            <div className="flex justify-between items-center text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+              <span>💬 UIDAI OTP GATEWAY</span>
+              <span>Now</span>
+            </div>
+            <p className="font-body text-slate-100 leading-normal text-[11px]">
+              Secure LandChain Verification code is <strong className="text-brand-mid font-extrabold select-all tracking-wider text-xs px-1 py-0.5 rounded bg-white/10">{simulatedOtp}</strong>. Valid for 5 minutes.
+            </p>
+          </div>
+          <button 
+            onClick={() => setShowSmsBanner(false)}
+            className="text-slate-400 hover:text-white font-bold text-xs p-1 cursor-pointer transition-colors"
+          >
+            ×
+          </button>
+        </motion.div>
+      )}
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-10 space-y-10">
         
@@ -467,16 +554,25 @@ export default function CitizenDashboard() {
                           <button
                             type="button"
                             onClick={handleSendKycOtp}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-brand hover:bg-brand-mid text-white font-heading font-semibold text-xs rounded-element transition-colors cursor-pointer"
+                            disabled={kycLoading}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-brand hover:bg-brand-mid text-white font-heading font-semibold text-xs rounded-element transition-colors cursor-pointer disabled:opacity-50"
                           >
-                            Send OTP Code
+                            {kycLoading ? "Sending..." : "Send OTP Code"}
                           </button>
                         )}
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <div className="p-3 text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-element font-body lc-border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
-                          <span>Enter verification OTP (use <strong>123456</strong>)</span>
+                        <div className="p-3 text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-element font-body lc-border border-emerald-200 dark:border-emerald-900 flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <IconCircleCheck className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-semibold">OTP sent to registered mobile: {kycMaskedPhone}</span>
+                          </div>
+                          {!simulatedOtp ? (
+                            <span className="text-[10px] text-emerald-500/80 ml-6">Please check your mobile phone for the secure verification code.</span>
+                          ) : (
+                            <span className="text-[10px] text-emerald-500/80 ml-6">Simulating secure OTP dispatch. Use the code shown in the notification toast above.</span>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] uppercase font-heading font-bold text-slate-400">verification code</label>
@@ -493,9 +589,10 @@ export default function CitizenDashboard() {
                           <button
                             type="button"
                             onClick={handleVerifyKycOtp}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-brand hover:bg-brand-mid text-white font-heading font-semibold text-xs rounded-element transition-colors cursor-pointer"
+                            disabled={kycLoading}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-brand hover:bg-brand-mid text-white font-heading font-semibold text-xs rounded-element transition-colors cursor-pointer disabled:opacity-50"
                           >
-                            Verify OTP
+                            {kycLoading ? "Verifying..." : "Verify OTP"}
                           </button>
                         )}
                       </div>
