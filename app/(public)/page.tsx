@@ -26,7 +26,7 @@ export default function SplashPage() {
         animate={{ scale: 1.03, opacity: 0.45 }}
         transition={{ duration: 3.2, ease: "easeOut" }}
         className="absolute inset-0 bg-cover bg-center z-10"
-        style={{ backgroundImage: "url('/splash_background.png')" }}
+        style={{ backgroundImage: "url('/login_background.png')" }}
       />
 
       {/* 3. Gradient vignette overlay for deep contrast and futuristic feel */}

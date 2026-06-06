@@ -26,6 +26,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState("");
+  const [simulatedOtp, setSimulatedOtp] = useState("");
+  const [showSmsBanner, setShowSmsBanner] = useState(false);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +55,13 @@ export default function LoginPage() {
       if (data.role) {
         setRole(data.role);
       }
+      if (data.simulatedOtp) {
+        setSimulatedOtp(data.simulatedOtp);
+        setShowSmsBanner(true);
+      } else {
+        setSimulatedOtp("");
+        setShowSmsBanner(false);
+      }
       setOtpSent(true);
     } catch (err) {
       setError("Failed to connect to verification server.");
@@ -64,14 +73,22 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (otp !== "123456" && otp !== "1234") {
-      setError("Incorrect OTP. For testing, please enter '123456'.");
-      return;
-    }
-
     setLoading(true);
+
     try {
+      const res = await fetch("/api/user/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aadhaar, otp }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Incorrect OTP. Please check the code and try again.");
+        setLoading(false);
+        return;
+      }
+
       const success = await login(aadhaar, role);
       if (success) {
         // Set a mock user cookie so the api routes can read it for fallback session checking
@@ -84,6 +101,8 @@ export default function LoginPage() {
           });
           document.cookie = `landchain_user=${encodeURIComponent(mockUserString)}; path=/; max-age=86400;`;
         }
+
+        setShowSmsBanner(false);
 
         // Redirect based on role
         if (role === "REGISTRAR") {
@@ -106,6 +125,35 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative">
       <Navbar />
+
+      {/* Simulated Phone Push Notification for OTP */}
+      {showSmsBanner && simulatedOtp && (
+        <motion.div
+          initial={{ y: -80, opacity: 0, scale: 0.95 }}
+          animate={{ y: 24, opacity: 1, scale: 1 }}
+          exit={{ y: -80, opacity: 0, scale: 0.95 }}
+          className="fixed top-0 left-1/2 -translate-x-1/2 max-w-sm w-[90%] bg-slate-900/95 text-white backdrop-blur-xl border-[0.5px] border-white/10 p-4 rounded-card shadow-2xl z-[9999] flex items-start space-x-3 text-xs"
+        >
+          <div className="p-2 rounded-element bg-brand flex-shrink-0 text-white shadow-md">
+            <IconFingerprint className="w-5 h-5" />
+          </div>
+          <div className="flex-grow space-y-1">
+            <div className="flex justify-between items-center text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+              <span>💬 UIDAI OTP GATEWAY</span>
+              <span>Now</span>
+            </div>
+            <p className="font-body text-slate-100 leading-normal text-[11px]">
+              Secure LandChain Verification code is <strong className="text-brand-mid font-extrabold select-all tracking-wider text-xs px-1 py-0.5 rounded bg-white/10">{simulatedOtp}</strong>. Valid for 5 minutes.
+            </p>
+          </div>
+          <button 
+            onClick={() => setShowSmsBanner(false)}
+            className="text-slate-400 hover:text-white font-bold text-xs p-1 cursor-pointer transition-colors"
+          >
+            ×
+          </button>
+        </motion.div>
+      )}
 
       <main className="flex-grow flex items-center justify-center py-16 px-6 relative overflow-hidden">
         
@@ -209,7 +257,11 @@ export default function LoginPage() {
                   <IconCircleCheck className="w-4 h-4 flex-shrink-0" />
                   <span className="font-semibold">OTP sent to registered mobile: {maskedPhone}</span>
                 </div>
-                <span className="text-[10px] text-emerald-500/80 ml-6">For testing, enter <strong>123456</strong></span>
+                {!simulatedOtp ? (
+                  <span className="text-[10px] text-emerald-500/80 ml-6">Please check your mobile phone for the secure verification code.</span>
+                ) : (
+                  <span className="text-[10px] text-emerald-500/80 ml-6">Simulating secure OTP dispatch. Use the code shown in the notification toast above.</span>
+                )}
               </div>
 
               <div className="space-y-1">
