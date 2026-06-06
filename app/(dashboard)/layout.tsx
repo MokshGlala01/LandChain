@@ -164,12 +164,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }`}>
         
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b-[0.5px] border-slate-800 bg-[#1a202a]">
+        <div className="h-16 xl:h-20 flex items-center justify-between px-6 border-b-[0.5px] border-slate-800 bg-[#1a202a]">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-element bg-brand flex items-center justify-center p-1.5 border-[0.5px] border-brand-mid/25 shadow-lg">
+            <div className="w-11 h-11 rounded-element bg-brand flex items-center justify-center p-1 border-[0.5px] border-brand-mid/25 shadow-lg">
               <img src="/logo.png" alt="LandChain Logo" className="w-full h-full object-contain invert" />
             </div>
-            <span className="font-heading font-extrabold text-lg text-white tracking-tight">LandChain</span>
+            <span className="font-heading font-extrabold text-xl text-white tracking-tight">LandChain</span>
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="xl:hidden p-1 text-slate-400 hover:text-white">
             <IconX className="w-5 h-5" />
