@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useAuth } from "@/components/providers";
+import { motion } from "framer-motion";
 import { 
   IconUserPlus, 
   IconFingerprint, 
@@ -77,11 +78,24 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative">
       <Navbar />
 
-      <main className="flex-grow flex items-center justify-center py-16 px-6">
-        <div className="max-w-lg w-full bg-slate-50/50 dark:bg-slate-900/10 lc-border rounded-card p-8 space-y-6 relative overflow-hidden">
+      <main className="flex-grow flex items-center justify-center py-16 px-6 relative overflow-hidden">
+        
+        {/* Full-screen city skyline image with a slow zoom/pan Ken Burns animation */}
+        <motion.div 
+          initial={{ scale: 1.1, opacity: 0 }}
+          animate={{ scale: 1.02, opacity: 1 }}
+          transition={{ duration: 4.5, ease: "easeOut" }}
+          className="absolute inset-0 bg-cover bg-center z-0"
+          style={{ backgroundImage: "url('/login_background.png')" }}
+        />
+
+        {/* Dark overlay for contrast and legibility */}
+        <div className="absolute inset-0 bg-slate-950/45 dark:bg-black/60 backdrop-blur-[1.5px] z-10"></div>
+
+        <div className="max-w-lg w-full bg-white/85 dark:bg-[#030806]/85 backdrop-blur-2xl border-[0.5px] border-white/20 dark:border-white/10 rounded-card p-8 space-y-6 relative z-20 shadow-2xl">
           
           {/* Header */}
           <div className="space-y-2 text-center">
