@@ -49,18 +49,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (aadhaar: string, selectedRole: string = "CITIZEN") => {
-    // Generate a mock hash for Aadhaar
-    const mockHash = "aadhaar_" + Math.random().toString(36).substring(2, 15);
+    const cleanAadhaar = aadhaar.replace(/\s/g, "");
+    const mockHash = "aadhaar_" + cleanAadhaar;
     
-    // Mock profiles based on role selection
+    // Default mock profiles in case API fails
     let name = "Rohan Sharma";
     let phone = "+91 98765 43210";
-    if (selectedRole === "REGISTRAR") {
-      name = "Officer Amit Kumar";
-      phone = "+91 99999 88888";
-    } else if (selectedRole === "BANK") {
-      name = "SBI Verifier Officer";
-      phone = "+91 88888 77777";
+    let role = selectedRole;
+
+    try {
+      const res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+      if (res.ok) {
+        const data = await res.json();
+        name = data.name;
+        phone = data.phone;
+        role = data.role;
+      }
+    } catch (err) {
+      console.warn("User lookup failed during login provider setup, using default mock details.");
     }
 
     const mockUser: User = {
@@ -68,7 +74,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       aadhaarHash: mockHash,
       name,
       phone,
-      role: selectedRole as any,
+      role: role as any,
       walletAddress: walletAddress || undefined,
     };
 

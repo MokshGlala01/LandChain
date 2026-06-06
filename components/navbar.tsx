@@ -33,8 +33,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-element bg-brand-light dark:bg-brand-dark/30 flex items-center justify-center text-brand dark:text-brand-mid transition-all duration-300 group-hover:scale-105">
-            <IconLink className="w-5.5 h-5.5 stroke-[2]" />
+          <div className="w-10 h-10 rounded-element bg-brand-light dark:bg-brand-dark/30 flex items-center justify-center p-1.5 transition-all duration-300 group-hover:scale-105 lc-border border-brand/10 dark:border-brand-mid/10">
+            <img src="/logo.png" alt="LandChain Logo" className="w-full h-full object-contain" />
           </div>
           <span className="font-heading font-extrabold text-2xl tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-brand-mid transition-colors duration-300">
             LandChain

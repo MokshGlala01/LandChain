@@ -89,12 +89,12 @@ export async function POST(req: Request) {
         entityId: transfer.id,
         entityType: "Transfer",
         actorId: fromOwnerId,
-        metadata: {
+        metadata: JSON.stringify({
           propertyId,
           fromOwnerId,
           toOwnerId: toUser.id,
           stampDuty,
-        },
+        }),
       },
     });
 
@@ -177,12 +177,12 @@ export async function PATCH(req: Request) {
             entityId: transferId,
             entityType: "Transfer",
             actorId: registrarId,
-            metadata: {
+            metadata: JSON.stringify({
               propertyId: transfer.propertyId,
               fromOwnerId: transfer.fromOwnerId,
               toOwnerId: transfer.toOwnerId,
               txHash: finalTxHash,
-            },
+            }),
           },
         }),
       ]);
@@ -211,11 +211,11 @@ export async function PATCH(req: Request) {
             entityId: transferId,
             entityType: "Transfer",
             actorId: registrarId,
-            metadata: {
+            metadata: JSON.stringify({
               propertyId: transfer.propertyId,
               fromOwnerId: transfer.fromOwnerId,
               toOwnerId: transfer.toOwnerId,
-            },
+            }),
           },
         }),
       ]);

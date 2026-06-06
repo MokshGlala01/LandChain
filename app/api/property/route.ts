@@ -73,11 +73,11 @@ export async function POST(req: Request) {
         entityId: property.id,
         entityType: "Property",
         actorId: ownerId,
-        metadata: {
+        metadata: JSON.stringify({
           parcelId,
           surveyNumber,
           blockchainTxHash: blockchainTxHash || "",
-        },
+        }),
       },
     });
 
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
       if (type === "surveyNumber") {
         properties = await prisma.property.findMany({
           where: {
-            surveyNumber: { contains: query, mode: "insensitive" },
+            surveyNumber: { contains: query },
           },
           include: {
             owner: true,
@@ -128,7 +128,7 @@ export async function GET(req: Request) {
         properties = await prisma.property.findMany({
           where: {
             owner: {
-              name: { contains: query, mode: "insensitive" },
+              name: { contains: query },
             },
           },
           include: {
@@ -142,7 +142,7 @@ export async function GET(req: Request) {
         // Default to parcelId
         properties = await prisma.property.findMany({
           where: {
-            parcelId: { contains: query, mode: "insensitive" },
+            parcelId: { contains: query },
           },
           include: {
             owner: true,

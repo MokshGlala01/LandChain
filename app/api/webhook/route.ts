@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
       // Locate or create user associated with this wallet address
       let user = await prisma.user.findFirst({
-        where: { walletAddress: { equals: owner, mode: "insensitive" } },
+        where: { walletAddress: owner },
       });
 
       if (!user) {
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
           entityId: property.id,
           entityType: "Property",
           actorId: user.id,
-          metadata: { parcelId, ownerAddress: owner, txHash },
+          metadata: JSON.stringify({ parcelId, ownerAddress: owner, txHash }),
         },
       });
 
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
       // Locate recipient user
       let toUser = await prisma.user.findFirst({
-        where: { walletAddress: { equals: to, mode: "insensitive" } },
+        where: { walletAddress: to },
       });
 
       if (!toUser) {
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
           entityId: property.id,
           entityType: "Property",
           actorId: toUser.id,
-          metadata: { parcelId, fromAddress: from, toAddress: to, txHash },
+          metadata: JSON.stringify({ parcelId, fromAddress: from, toAddress: to, txHash }),
         },
       });
 

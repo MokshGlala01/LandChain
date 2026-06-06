@@ -24,8 +24,9 @@ export default function LoginPage() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [maskedPhone, setMaskedPhone] = useState("");
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -37,10 +38,26 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || "Aadhaar Number is not registered in the system.");
+        setLoading(false);
+        return;
+      }
+
+      setMaskedPhone(data.phone);
+      if (data.role) {
+        setRole(data.role);
+      }
       setOtpSent(true);
+    } catch (err) {
+      setError("Failed to connect to verification server.");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -173,9 +190,12 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               {/* Alert OTP */}
-              <div className="p-3 text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-element font-body lc-border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
-                <IconCircleCheck className="w-4 h-4 flex-shrink-0" />
-                <span>Mock OTP Sent! For testing, enter <strong>123456</strong></span>
+              <div className="p-3 text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-element font-body lc-border border-emerald-200 dark:border-emerald-900 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <IconCircleCheck className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-semibold">OTP sent to registered mobile: {maskedPhone}</span>
+                </div>
+                <span className="text-[10px] text-emerald-500/80 ml-6">For testing, enter <strong>123456</strong></span>
               </div>
 
               <div className="space-y-1">
