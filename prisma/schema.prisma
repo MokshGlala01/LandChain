@@ -1,0 +1,81 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String     @id @default(cuid())
+  aadhaarHash   String     @unique
+  name          String
+  phone         String
+  email         String?
+  role          Role       @default(CITIZEN)
+  walletAddress String?
+  properties    Property[]
+  createdAt     DateTime   @default(now())
+}
+
+model Property {
+  id            String     @id @default(cuid())
+  parcelId      String     @unique   // blockchain parcel ID
+  surveyNumber  String
+  area          Float
+  location      String
+  latitude      Float
+  longitude     Float
+  ipfsHash      String                // document hash on IPFS
+  blockchainTxHash String            // on-chain tx hash
+  ownerId       String
+  owner         User       @relation(fields: [ownerId], references: [id])
+  transfers     Transfer[]
+  status        PropertyStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+}
+
+model Transfer {
+  id            String     @id @default(cuid())
+  propertyId    String
+  property      Property   @relation(fields: [propertyId], references: [id])
+  fromOwnerId   String
+  toOwnerId     String
+  stampDuty     Float
+  txHash        String?
+  status        TransferStatus @default(PENDING)
+  initiatedAt   DateTime   @default(now())
+  completedAt   DateTime?
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityId   String
+  entityType String
+  actorId    String
+  metadata   Json
+  timestamp  DateTime @default(now())
+}
+
+enum Role {
+  CITIZEN
+  BANK
+  REGISTRAR
+  ADMIN
+}
+
+enum PropertyStatus {
+  ACTIVE
+  DISPUTED
+  TRANSFERRED
+  FROZEN
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}

@@ -1,0 +1,78 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\Dell\\Desktop\\LandChain\\contracts\\LandRegistry.sol": {
+      "lastModificationDate": 1780724492453,
+      "contentHash": "7ea6256521fa32ded19a6133a4d2d1b4",
+      "sourceName": "contracts/LandRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "LandRegistry"
+      ]
+    },
+    "C:\\Users\\Dell\\Desktop\\LandChain\\contracts\\PropertyTransfer.sol": {
+      "lastModificationDate": 1780724498437,
+      "contentHash": "8ca5c8cbd2ee8f204e61215471ee2377",
+      "sourceName": "contracts/PropertyTransfer.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ILandRegistry",
+        "PropertyTransfer"
+      ]
+    }
+  }
+}
