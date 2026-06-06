@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
+
 import { registerPropertyOnChain } from "@/lib/blockchain";
 import { uploadFileToIPFS } from "@/lib/ipfs";
 import CryptoJS from "crypto-js";
@@ -106,9 +105,70 @@ export default function CitizenDashboard() {
   const loadOwnedProperties = async () => {
     if (!user) return;
     try {
+      // 1. Self-healing: Check if the logged-in user still exists in the database.
+      // If Vercel database container reset, this will restore their database record automatically!
+      const cleanAadhaar = user.aadhaarHash.replace("aadhaar_", "");
+      const checkRes = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+      
+      if (!checkRes.ok && checkRes.status === 404) {
+        console.log("[Self-Healing] User record not found in database. Re-syncing profile details...");
+        const syncRes = await fetch("/api/user/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: user.id,
+            aadhaar: cleanAadhaar,
+            name: user.name,
+            phone: user.phone,
+            role: user.role,
+            walletAddress: user.walletAddress || null,
+          }),
+        });
+        if (!syncRes.ok) {
+          console.error("Self-healing: User registration sync failed.");
+        }
+      }
+
+      // 2. Fetch properties from the database
       const res = await fetch(`/api/property?query=${user.name}&type=ownerName`);
       if (res.ok) {
         const data = await res.json();
+        
+        // 3. Self-healing: Check if local properties exist that are missing from the database
+        const localProps = JSON.parse(localStorage.getItem("landchain_local_properties") || "[]");
+        const userLocalProps = localProps.filter((p: any) => p.ownerAadhaar === cleanAadhaar);
+        
+        const dbSurveyNumbers = new Set(data.map((p: any) => p.surveyNumber));
+        const missingProps = userLocalProps.filter((lp: any) => !dbSurveyNumbers.has(lp.surveyNumber));
+        
+        if (missingProps.length > 0) {
+          console.log(`[Self-Healing] Syncing ${missingProps.length} missing properties to database...`);
+          for (const lp of missingProps) {
+            await fetch("/api/property", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                parcelId: lp.parcelId,
+                surveyNumber: lp.surveyNumber,
+                area: lp.area,
+                location: lp.location,
+                latitude: lp.latitude,
+                longitude: lp.longitude,
+                ipfsHash: lp.ipfsHash,
+                blockchainTxHash: lp.blockchainTxHash,
+                ownerId: user.id
+              }),
+            });
+          }
+          // Reload from db
+          const retryRes = await fetch(`/api/property?query=${user.name}&type=ownerName`);
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            setProperties(retryData);
+            return;
+          }
+        }
+        
         setProperties(data);
       }
     } catch (err) {
@@ -301,6 +361,27 @@ export default function CitizenDashboard() {
         throw new Error(data.error || "Failed to write property to database.");
       }
 
+      // Save property backup details locally in localStorage to survive Vercel database container wipes
+      if (typeof window !== "undefined") {
+        const localProps = JSON.parse(localStorage.getItem("landchain_local_properties") || "[]");
+        const cleanAadhaar = user?.aadhaarHash?.replace("aadhaar_", "") || "";
+        if (!localProps.some((p: any) => p.parcelId === parcelId)) {
+          localProps.push({
+            parcelId,
+            surveyNumber: surveyNum,
+            area: parseFloat(area),
+            location,
+            latitude: mapLat,
+            longitude: mapLng,
+            ipfsHash: ipfsCid,
+            blockchainTxHash: txHash,
+            ownerId: user?.id,
+            ownerAadhaar: cleanAadhaar,
+          });
+          localStorage.setItem("landchain_local_properties", JSON.stringify(localProps));
+        }
+      }
+
       // Reload owned properties
       await loadOwnedProperties();
       
@@ -373,9 +454,7 @@ export default function CitizenDashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative">
-      <Navbar />
-
+    <div className="space-y-10">
       {/* Simulated Phone Push Notification for OTP */}
       {showSmsBanner && simulatedOtp && (
         <motion.div
@@ -404,8 +483,6 @@ export default function CitizenDashboard() {
           </button>
         </motion.div>
       )}
-
-      <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-10 space-y-10">
         
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800/80">
@@ -972,9 +1049,6 @@ export default function CitizenDashboard() {
           </div>
         )}
 
-      </main>
-
-      <Footer />
     </div>
   );
 }

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { aadhaar, name, phone, email, role, walletAddress } = body;
+    const { id, aadhaar, name, phone, email, role, walletAddress } = body;
 
     if (!aadhaar || !name || !phone || !role) {
       return NextResponse.json(
@@ -32,9 +32,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create user record in PostgreSQL
+    // Create user record in SQLite
     const user = await prisma.user.create({
       data: {
+        id: id || undefined,
         aadhaarHash,
         name,
         phone,

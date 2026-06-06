@@ -42,8 +42,31 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
-      const data = await res.json();
+      let res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+      let data = await res.json();
+      
+      // Self-healing: if not found on the backend, try restoring from local storage backup
+      if (!res.ok && res.status === 404) {
+        if (typeof window !== "undefined") {
+          const localUsers = JSON.parse(localStorage.getItem("landchain_local_users") || "[]");
+          const matchedUser = localUsers.find((u: any) => u.aadhaar === cleanAadhaar);
+          
+          if (matchedUser) {
+            console.log("[Self-Healing] Restoring database user record from local storage backup...");
+            const syncRes = await fetch("/api/user/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(matchedUser),
+            });
+            
+            if (syncRes.ok) {
+              // Retry lookup
+              res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+              data = await res.json();
+            }
+          }
+        }
+      }
       
       if (!res.ok) {
         setError(data.error || "Aadhaar Number is not registered in the system.");

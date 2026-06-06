@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
+
 import { 
   IconBuildingBank, 
   IconSearch, 
@@ -108,10 +107,7 @@ export default function BankPortal() {
   if (!user || user.role !== "BANK") return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300">
-      <Navbar />
-
-      <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-10 space-y-10">
+    <div className="space-y-10">
         
         {/* Title */}
         <div className="space-y-1.5 pb-6 border-b border-slate-100 dark:border-slate-800/80">
@@ -285,9 +281,6 @@ export default function BankPortal() {
 
         </div>
 
-      </main>
-
-      <Footer />
     </div>
   );
 }

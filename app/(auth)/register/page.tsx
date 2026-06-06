@@ -66,6 +66,23 @@ export default function RegisterPage() {
         throw new Error(data.error || "Failed to register user.");
       }
 
+      // Save user details locally in localStorage to survive Vercel database container wipes
+      if (typeof window !== "undefined") {
+        const localUsers = JSON.parse(localStorage.getItem("landchain_local_users") || "[]");
+        if (!localUsers.some((u: any) => u.aadhaar === cleanAadhaar)) {
+          localUsers.push({
+            id: data.id, // Save the actual database CUID
+            aadhaar: cleanAadhaar,
+            name,
+            phone,
+            email: email || null,
+            role,
+            walletAddress: finalWalletAddress,
+          });
+          localStorage.setItem("landchain_local_users", JSON.stringify(localUsers));
+        }
+      }
+
       setSuccess(true);
       setTimeout(() => {
         router.push("/login");
