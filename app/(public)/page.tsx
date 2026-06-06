@@ -15,118 +15,186 @@ export default function SplashPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#f7faf8] dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">
       {/* Background glowing decorations */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-brand-light/30 dark:bg-brand/5 blur-[120px] -z-10 animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-accent-light/25 dark:bg-accent-DEFAULT/5 blur-[120px] -z-10 animate-pulse" style={{ animationDelay: "1.5s" }}></div>
+      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full bg-brand-light/40 dark:bg-brand/5 blur-[130px] -z-10 animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-accent-light/30 dark:bg-accent-DEFAULT/5 blur-[130px] -z-10 animate-pulse" style={{ animationDelay: "1.5s" }}></div>
 
-      {/* Full-page background building skyline outline animation */}
+      {/* Tech Grid Pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f6e5606_1px,transparent_1px),linear-gradient(to_bottom,#0f6e5606_1px,transparent_1px)] bg-[size:40px_40px] -z-20"></div>
+
+      {/* Full-page background building skyline outline animation with neon glow */}
       <div className="absolute inset-0 w-full h-full -z-20 flex items-end overflow-hidden pointer-events-none select-none">
-        <svg className="w-full h-3/5 min-h-[400px]" viewBox="0 0 1200 400" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg className="w-full h-full min-h-screen" viewBox="0 0 1200 800" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            {/* Glowing neon filter */}
+            <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            
+            {/* Gradients for buildings */}
+            <linearGradient id="build-grad-1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#0F6E56" stopOpacity="0.08"/>
+              <stop offset="100%" stopColor="#0F6E56" stopOpacity="0.01"/>
+            </linearGradient>
+            <linearGradient id="build-grad-2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#185FA5" stopOpacity="0.06"/>
+              <stop offset="100%" stopColor="#185FA5" stopOpacity="0.01"/>
+            </linearGradient>
+          </defs>
+
           {/* Building 1 (Left Tall Outline) */}
           <motion.rect
-            x="50" y="100" width="100" height="300" rx="4"
-            className="stroke-brand/10 dark:stroke-brand-mid/5 fill-brand-light/[0.01] dark:fill-brand-dark/[0.005]"
-            strokeWidth="1.2"
-            initial={{ y: 300, opacity: 0 }}
+            x="50" y="200" width="130" height="600" rx="6"
+            stroke="#0F6E56"
+            strokeOpacity="0.25"
+            strokeWidth="1.5"
+            fill="url(#build-grad-1)"
+            filter="url(#neon-glow)"
+            initial={{ y: 600, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
+            transition={{ duration: 1.6, ease: "easeOut" }}
           />
           
           {/* Building 2 (Left Mid Block) */}
           <motion.rect
-            x="180" y="180" width="120" height="220" rx="4"
-            className="stroke-accent/10 dark:stroke-accent-DEFAULT/5 fill-accent-light/[0.008] dark:fill-accent-DEFAULT/[0.003]"
-            strokeWidth="1.2"
-            initial={{ y: 250, opacity: 0 }}
+            x="220" y="350" width="150" height="450" rx="6"
+            stroke="#185FA5"
+            strokeOpacity="0.22"
+            strokeWidth="1.5"
+            fill="url(#build-grad-2)"
+            filter="url(#neon-glow)"
+            initial={{ y: 500, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.8, ease: "easeOut", delay: 0.2 }}
+            transition={{ duration: 1.9, ease: "easeOut", delay: 0.2 }}
           />
 
-          {/* Building 3 (Center Left Spire) */}
+          {/* Building 3 (Center Left Spire Skyscraper) */}
           <motion.path
-            d="M 340 400 L 340 100 L 390 50 L 440 100 L 440 400 Z"
-            className="stroke-brand/15 dark:stroke-brand-mid/8 fill-brand-light/[0.02] dark:fill-brand-dark/[0.01]"
-            strokeWidth="1.2"
-            initial={{ y: 350, opacity: 0 }}
+            d="M 410 800 L 410 250 L 470 150 L 530 250 L 530 800 Z"
+            stroke="#0F6E56"
+            strokeOpacity="0.3"
+            strokeWidth="1.8"
+            fill="url(#build-grad-1)"
+            filter="url(#neon-glow)"
+            initial={{ y: 700, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 2, ease: "easeOut", delay: 0.4 }}
+            transition={{ duration: 2.2, ease: "easeOut", delay: 0.4 }}
           />
+          {/* Glowing Spire Tip */}
           <motion.circle
-            cx="390" cy="50" r="4.5"
-            className="fill-brand dark:fill-brand-mid"
-            animate={{ scale: [1, 1.8, 1], opacity: [0.4, 1, 0.4] }}
+            cx="470" cy="150" r="6"
+            fill="#1D9E75"
+            filter="url(#neon-glow)"
+            animate={{ scale: [1, 2, 1], opacity: [0.5, 1, 0.5] }}
             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
           />
 
           {/* Building 4 (Center Right Block) */}
           <motion.rect
-            x="480" y="140" width="140" height="260" rx="4"
-            className="stroke-brand/10 dark:stroke-brand-mid/5 fill-brand-light/[0.01] dark:fill-brand-dark/[0.005]"
-            strokeWidth="1.2"
-            initial={{ y: 300, opacity: 0 }}
+            x="580" y="280" width="160" height="520" rx="6"
+            stroke="#0F6E56"
+            strokeOpacity="0.25"
+            strokeWidth="1.5"
+            fill="url(#build-grad-1)"
+            filter="url(#neon-glow)"
+            initial={{ y: 600, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.6, ease: "easeOut", delay: 0.3 }}
+            transition={{ duration: 1.8, ease: "easeOut", delay: 0.3 }}
           />
 
           {/* Building 5 (Right Spire Tower) */}
           <motion.path
-            d="M 660 400 L 660 140 L 710 90 L 760 140 L 760 400 Z"
-            className="stroke-accent/10 dark:stroke-accent-DEFAULT/5 fill-accent-light/[0.008] dark:fill-accent-DEFAULT/[0.003]"
-            strokeWidth="1.2"
-            initial={{ y: 320, opacity: 0 }}
+            d="M 780 800 L 780 300 L 830 220 L 880 300 L 880 800 Z"
+            stroke="#185FA5"
+            strokeOpacity="0.25"
+            strokeWidth="1.5"
+            fill="url(#build-grad-2)"
+            filter="url(#neon-glow)"
+            initial={{ y: 650, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.9, ease: "easeOut", delay: 0.15 }}
+            transition={{ duration: 2, ease: "easeOut", delay: 0.15 }}
           />
           <motion.circle
-            cx="710" cy="90" r="4.5"
-            className="fill-accent dark:fill-accent-DEFAULT"
+            cx="830" cy="220" r="5"
+            fill="#185FA5"
+            filter="url(#neon-glow)"
             animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0.9, 0.4] }}
             transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut", delay: 0.5 }}
           />
 
           {/* Building 6 (Far Right Block) */}
           <motion.rect
-            x="800" y="200" width="110" height="200" rx="4"
-            className="stroke-brand/10 dark:stroke-brand-mid/5 fill-brand-light/[0.01] dark:fill-brand-dark/[0.005]"
-            strokeWidth="1.2"
-            initial={{ y: 200, opacity: 0 }}
+            x="920" y="380" width="120" height="420" rx="6"
+            stroke="#0F6E56"
+            strokeOpacity="0.25"
+            strokeWidth="1.5"
+            fill="url(#build-grad-1)"
+            filter="url(#neon-glow)"
+            initial={{ y: 500, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 2.2, ease: "easeOut", delay: 0.5 }}
+            transition={{ duration: 2.4, ease: "easeOut", delay: 0.5 }}
           />
 
           {/* Building 7 (Far Right Outline Tower) */}
           <motion.rect
-            x="940" y="90" width="90" height="310" rx="4"
-            className="stroke-brand/8 dark:stroke-brand-mid/3 fill-brand-light/[0.005] dark:fill-brand-dark/[0.002]"
+            x="1070" y="180" width="100" height="620" rx="6"
+            stroke="#0F6E56"
+            strokeOpacity="0.2"
             strokeWidth="1.2"
-            initial={{ y: 320, opacity: 0 }}
+            fill="url(#build-grad-1)"
+            filter="url(#neon-glow)"
+            initial={{ y: 650, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.7, ease: "easeOut", delay: 0.6 }}
+            transition={{ duration: 2, ease: "easeOut", delay: 0.6 }}
           />
 
-          {/* Glowing connection dots / windows inside buildings */}
-          <motion.circle cx="100" cy="180" r="2" className="fill-brand/60 dark:fill-brand-mid/60" animate={{ opacity: [0.2, 0.9, 0.2] }} transition={{ repeat: Infinity, duration: 2, delay: 0.2 }} />
-          <motion.circle cx="100" cy="220" r="2" className="fill-brand/60 dark:fill-brand-mid/60" animate={{ opacity: [0.9, 0.2, 0.9] }} transition={{ repeat: Infinity, duration: 1.8, delay: 0.5 }} />
-          <motion.circle cx="240" cy="250" r="2" className="fill-accent/60 dark:fill-accent-DEFAULT/60" animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ repeat: Infinity, duration: 2.5, delay: 0.1 }} />
-          <motion.circle cx="390" cy="150" r="2" className="fill-brand/70 dark:fill-brand-mid/70" animate={{ opacity: [0.1, 0.9, 0.1] }} transition={{ repeat: Infinity, duration: 3, delay: 0.8 }} />
-          <motion.circle cx="390" cy="230" r="2.5" className="fill-brand/70 dark:fill-brand-mid/70" animate={{ opacity: [0.8, 0.2, 0.8] }} transition={{ repeat: Infinity, duration: 2.2, delay: 0.4 }} />
-          <motion.circle cx="550" cy="210" r="2" className="fill-brand/60 dark:fill-brand-mid/60" animate={{ opacity: [0.3, 0.9, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.7 }} />
-          <motion.circle cx="710" cy="190" r="2" className="fill-accent/60 dark:fill-accent-DEFAULT/60" animate={{ opacity: [0.2, 0.8, 0.2] }} transition={{ repeat: Infinity, duration: 2.8, delay: 0.3 }} />
-          <motion.circle cx="710" cy="270" r="2" className="fill-accent/60 dark:fill-accent-DEFAULT/60" animate={{ opacity: [0.9, 0.1, 0.9] }} transition={{ repeat: Infinity, duration: 2.1, delay: 0.9 }} />
-          <motion.circle cx="850" cy="280" r="2" className="fill-brand/60 dark:fill-brand-mid/60" animate={{ opacity: [0.4, 0.9, 0.4] }} transition={{ repeat: Infinity, duration: 1.7, delay: 0.2 }} />
-          <motion.circle cx="985" cy="170" r="2" className="fill-brand/50 dark:fill-brand-mid/50" animate={{ opacity: [0.1, 0.8, 0.1] }} transition={{ repeat: Infinity, duration: 3.2, delay: 0.6 }} />
+          {/* Glowing Windows / Connection nodes inside buildings */}
+          {/* Building 1 Nodes */}
+          <motion.circle cx="100" cy="350" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 2, delay: 0.2 }} />
+          <motion.circle cx="130" cy="450" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [1, 0.2, 1] }} transition={{ repeat: Infinity, duration: 1.8, delay: 0.5 }} />
+          <motion.circle cx="90" cy="550" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.3, 0.9, 0.3] }} transition={{ repeat: Infinity, duration: 2.2, delay: 0.8 }} />
 
-          {/* Grid lines behind city */}
-          <line x1="0" y1="400" x2="1200" y2="400" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
+          {/* Building 2 Nodes */}
+          <motion.circle cx="280" cy="420" r="2.5" fill="#4696e6" filter="url(#neon-glow)" animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ repeat: Infinity, duration: 2.5, delay: 0.1 }} />
+          <motion.circle cx="310" cy="520" r="2.5" fill="#4696e6" filter="url(#neon-glow)" animate={{ opacity: [0.8, 0.3, 0.8] }} transition={{ repeat: Infinity, duration: 2, delay: 0.7 }} />
+
+          {/* Building 3 Nodes */}
+          <motion.circle cx="470" cy="320" r="3" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.1, 1, 0.1] }} transition={{ repeat: Infinity, duration: 3, delay: 0.8 }} />
+          <motion.circle cx="440" cy="480" r="3" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.9, 0.2, 0.9] }} transition={{ repeat: Infinity, duration: 2.2, delay: 0.4 }} />
+          <motion.circle cx="500" cy="620" r="3" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.4, 0.8, 0.4] }} transition={{ repeat: Infinity, duration: 2.5, delay: 0.3 }} />
+
+          {/* Building 4 Nodes */}
+          <motion.circle cx="640" cy="380" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.7 }} />
+          <motion.circle cx="680" cy="500" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.8, 0.3, 0.8] }} transition={{ repeat: Infinity, duration: 2.4, delay: 0.1 }} />
+
+          {/* Building 5 Nodes */}
+          <motion.circle cx="830" cy="380" r="2.5" fill="#4696e6" filter="url(#neon-glow)" animate={{ opacity: [0.2, 0.8, 0.2] }} transition={{ repeat: Infinity, duration: 2.8, delay: 0.3 }} />
+          <motion.circle cx="830" cy="550" r="2.5" fill="#4696e6" filter="url(#neon-glow)" animate={{ opacity: [0.9, 0.1, 0.9] }} transition={{ repeat: Infinity, duration: 2.1, delay: 0.9 }} />
+
+          {/* Building 6 Nodes */}
+          <motion.circle cx="970" cy="480" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.4, 0.9, 0.4] }} transition={{ repeat: Infinity, duration: 1.7, delay: 0.2 }} />
+
+          {/* Building 7 Nodes */}
+          <motion.circle cx="1120" cy="300" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.1, 0.8, 0.1] }} transition={{ repeat: Infinity, duration: 3.2, delay: 0.6 }} />
+          <motion.circle cx="1120" cy="460" r="2.5" fill="#1D9E75" filter="url(#neon-glow)" animate={{ opacity: [0.8, 0.2, 0.8] }} transition={{ repeat: Infinity, duration: 2.4, delay: 0.4 }} />
+
+          {/* Base Registry Line */}
+          <line x1="0" y1="800" x2="1200" y2="800" stroke="#0F6E56" strokeOpacity="0.3" strokeWidth="2" />
           
-          {/* Glowing sweeping scanning laser line */}
+          {/* Glowing sweeping scanning laser line (Blockchain Mutation scan) */}
           <motion.line
-            x1="0" y1="280" x2="1200" y2="280"
-            className="stroke-brand/20 dark:stroke-brand-mid/10"
-            strokeWidth="1.5"
-            animate={{ y: [400, 50, 400] }}
-            transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+            x1="0" y1="400" x2="1200" y2="400"
+            stroke="#1D9E75"
+            strokeOpacity="0.4"
+            strokeWidth="2.5"
+            filter="url(#neon-glow)"
+            animate={{ y: [800, 100, 800] }}
+            transition={{ repeat: Infinity, duration: 9, ease: "easeInOut" }}
           />
         </svg>
       </div>
@@ -205,7 +273,7 @@ export default function SplashPage() {
             className="absolute -inset-4 rounded-full border border-dashed border-brand/30 dark:border-brand-mid/20"
           ></motion.div>
 
-          {/* Core Logo box (BIG SIZECenterpiece) */}
+          {/* Core Logo box (BIG SIZE Centerpiece) */}
           <motion.div
             initial={{ scale: 0.8, rotate: -5 }}
             animate={{ scale: 1, rotate: 0 }}
