@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // POST: listen to on-chain events and sync database
 export async function POST(req: Request) {
   try {
