@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
 import Link from "next/link";
 import { 
   IconShieldCheck, 
@@ -82,10 +80,7 @@ export default function VerifyProperty({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300">
-      <Navbar />
-
-      <main className="flex-grow flex items-center justify-center py-16 px-6">
+    <div className="flex items-center justify-center py-10 px-6">
         <div className="max-w-2xl w-full bg-slate-50/50 dark:bg-slate-900/10 lc-border rounded-card p-8 md:p-12 space-y-8 relative overflow-hidden">
           
           {/* Background decoration */}
@@ -215,9 +210,6 @@ export default function VerifyProperty({ params }: { params: { id: string } }) {
           ) : null}
 
         </div>
-      </main>
-
-      <Footer />
     </div>
   );
 }

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
+
 import { IconShieldCheck, IconSearch, IconArrowRight } from "@tabler/icons-react";
 
 export default function VerifyLookup() {
@@ -25,10 +24,7 @@ export default function VerifyLookup() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative">
-      <Navbar />
-
-      <main className="flex-grow flex items-center justify-center py-20 px-6">
+    <div className="flex items-center justify-center py-10 px-6">
         <div className="max-w-md w-full bg-slate-50/50 dark:bg-slate-900/10 lc-border rounded-card p-8 md:p-12 space-y-8 relative overflow-hidden">
           
           {/* Background decoration */}
@@ -93,9 +89,6 @@ export default function VerifyLookup() {
           </div>
 
         </div>
-      </main>
-
-      <Footer />
     </div>
   );
 }

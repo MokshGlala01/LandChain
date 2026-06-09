@@ -55,6 +55,7 @@ export async function GET(req: Request) {
     const simulatedOtp = sentRealSms ? null : otp;
 
     return NextResponse.json({
+      id: user.id,
       name: user.name,
       role: user.role,
       phone: maskedPhone,

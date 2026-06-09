@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
+
 import { jsPDF } from "jspdf";
 import { 
   IconSearch, 
@@ -206,10 +205,7 @@ export default function PropertySearch() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#030806] text-slate-800 dark:text-slate-100 transition-colors duration-300">
-      <Navbar />
-
-      <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-10 space-y-8">
+    <div className="space-y-8">
         
         {/* Header and Toggle */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -608,9 +604,6 @@ export default function PropertySearch() {
           </div>
         )}
 
-      </main>
-
-      <Footer />
     </div>
   );
 }

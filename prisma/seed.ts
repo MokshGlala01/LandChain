@@ -14,7 +14,7 @@ async function main() {
   // 2. Create Users
   const citizen = await prisma.user.create({
     data: {
-      aadhaarHash: "e5ac3a76384ad1eb83c318287f3b8f10738a9d9b4b008d1e345f778a48721fa6", // mock SHA-256 for "1234 5678 9012"
+      aadhaarHash: "aadhaar_123456789012", // mock Aadhaar prefix for "1234 5678 9012"
       name: "Rohan Sharma",
       phone: "+91 98765 43210",
       email: "rohan.sharma@example.com",
@@ -25,7 +25,7 @@ async function main() {
 
   const registrar = await prisma.user.create({
     data: {
-      aadhaarHash: "fe823b72382ad1eb83c318287f3b8f10738a9d9b4b008d1e345f778a48721fb5", // mock SHA-256 for "8888 8888 8888"
+      aadhaarHash: "aadhaar_888888888888", // mock Aadhaar prefix for "8888 8888 8888"
       name: "Officer Amit Kumar",
       phone: "+91 99999 88888",
       email: "amit.kumar@gov.in",
@@ -36,7 +36,7 @@ async function main() {
 
   const bank = await prisma.user.create({
     data: {
-      aadhaarHash: "ba723b72382ad1eb83c318287f3b8f10738a9d9b4b008d1e345f778a48721fc6", // mock SHA-256 for "7777 7777 7777"
+      aadhaarHash: "aadhaar_777777777777", // mock Aadhaar prefix for "7777 7777 7777"
       name: "SBI Verifier Officer",
       phone: "+91 88888 77777",
       email: "verifier.sbi@sbi.co.in",

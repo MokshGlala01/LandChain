@@ -53,6 +53,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const mockHash = "aadhaar_" + cleanAadhaar;
     
     // Default mock profiles in case API fails
+    let id = "usr_" + Math.random().toString(36).substring(2, 9);
     let name = "Rohan Sharma";
     let phone = "+91 98765 43210";
     let role = selectedRole;
@@ -61,6 +62,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
       if (res.ok) {
         const data = await res.json();
+        if (data.id) {
+          id = data.id;
+        }
         name = data.name;
         phone = data.phone;
         role = data.role;
@@ -70,7 +74,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
 
     const mockUser: User = {
-      id: "usr_" + Math.random().toString(36).substring(2, 9),
+      id,
       aadhaarHash: mockHash,
       name,
       phone,
