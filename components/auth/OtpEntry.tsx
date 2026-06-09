@@ -166,16 +166,6 @@ export default function OtpEntry({
         </p>
       )}
 
-      {/* Display mock OTP if running in simulator mode */}
-      {mockOtp && timeLeft > 0 && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs text-center font-medium leading-normal animate-pulse">
-          [SIMULATION] Your Aadhaar OTP is:{' '}
-          <strong className="select-all bg-emerald-100 px-1.5 py-0.5 rounded text-[#0F6E56] font-mono tracking-wider text-sm">
-            {mockOtp}
-          </strong>
-        </div>
-      )}
-
       {/* Verify Button */}
       <button
         type="button"

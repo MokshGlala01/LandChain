@@ -69,16 +69,7 @@ export default function AadhaarRegisterWizard() {
 
       setAadhaarHash(data.aadhaarHash)
       setMockOtp(data.mockOtp || null)
-      
-      // If mock OTP was returned, display it in a prominent Sonner toast
-      if (data.mockOtp) {
-        toast.success(`[SIMULATION] UIDAI OTP dispatched: ${data.mockOtp}`, {
-          duration: 10000,
-          position: 'top-center'
-        })
-      } else {
-        toast.success('OTP sent to your registered mobile number')
-      }
+      toast.success('OTP sent to your registered mobile number')
 
       setStep(3)
       setShowOtpInputs(false)
@@ -154,13 +145,8 @@ export default function AadhaarRegisterWizard() {
 
       if (data.mockOtp) {
         setMockOtp(data.mockOtp)
-        toast.success(`[SIMULATION] UIDAI OTP dispatched: ${data.mockOtp}`, {
-          duration: 10000,
-          position: 'top-center'
-        })
-      } else {
-        toast.success('A new OTP has been dispatched to your mobile')
       }
+      toast.success('A new OTP has been dispatched to your mobile')
 
       setShowOtpInputs(false)
     } catch (err: any) {
