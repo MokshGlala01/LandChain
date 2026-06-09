@@ -8,16 +8,18 @@ interface OtpEntryProps {
   onResend: () => void;
   isLoading?: boolean;
   attemptsLeft?: number | null;
+  mockOtp?: string | null;
 }
 
 export default function OtpEntry({
   onSubmit,
   onResend,
   isLoading = false,
-  attemptsLeft = null
+  attemptsLeft = null,
+  mockOtp = null
 }: OtpEntryProps) {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''))
-  const [timeLeft, setTimeLeft] = useState(600) // 10 minutes (600 seconds)
+  const [timeLeft, setTimeLeft] = useState(120) // 2 minutes (120 seconds)
   const inputRefs = useRef<HTMLInputElement[]>([])
 
   // Countdown timer
@@ -93,7 +95,7 @@ export default function OtpEntry({
   const handleResendClick = () => {
     if (timeLeft === 0) {
       setOtp(Array(6).fill(''))
-      setTimeLeft(600)
+      setTimeLeft(120)
       onResend()
       inputRefs.current[0]?.focus()
     }
@@ -162,6 +164,16 @@ export default function OtpEntry({
         <p className={`text-xs text-center font-medium ${attemptsLeft <= 1 ? 'text-red-600' : 'text-amber-600'}`}>
           {attemptsLeft} attempt{attemptsLeft > 1 ? 's' : ''} remaining before session lock.
         </p>
+      )}
+
+      {/* Display mock OTP if running in simulator mode */}
+      {mockOtp && timeLeft > 0 && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs text-center font-medium leading-normal animate-pulse">
+          [SIMULATION] Your Aadhaar OTP is:{' '}
+          <strong className="select-all bg-emerald-100 px-1.5 py-0.5 rounded text-[#0F6E56] font-mono tracking-wider text-sm">
+            {mockOtp}
+          </strong>
+        </div>
       )}
 
       {/* Verify Button */}

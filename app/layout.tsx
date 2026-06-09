@@ -3,6 +3,7 @@ import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import AILegalAssistant from "@/components/AILegalAssistant";
+import { Toaster } from "sonner";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body className={`${syne.variable} ${dmSans.variable} font-body antialiased selection:bg-brand-light selection:text-brand-dark`}>
         <Providers>
           {children}
+          <Toaster position="top-center" richColors />
           <AILegalAssistant />
         </Providers>
       </body>

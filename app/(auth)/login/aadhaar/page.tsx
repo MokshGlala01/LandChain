@@ -24,6 +24,7 @@ export default function AadhaarLoginPage() {
   const [aadhaarHash, setAadhaarHash] = useState('')
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null)
   const [showOtpInputs, setShowOtpInputs] = useState(false)
+  const [mockOtp, setMockOtp] = useState<string | null>(null)
 
   // 3-second timer transition for OTP waiting screen in Step 2
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function AadhaarLoginPage() {
       }
 
       setAadhaarHash(data.aadhaarHash)
+      setMockOtp(data.mockOtp || null)
 
       if (data.mockOtp) {
         toast.success(`[SIMULATION] UIDAI OTP dispatched: ${data.mockOtp}`, {
@@ -145,6 +147,7 @@ export default function AadhaarLoginPage() {
       }
 
       if (data.mockOtp) {
+        setMockOtp(data.mockOtp)
         toast.success(`[SIMULATION] UIDAI OTP dispatched: ${data.mockOtp}`, {
           duration: 10000,
           position: 'top-center'
@@ -236,6 +239,7 @@ export default function AadhaarLoginPage() {
                   onResend={handleOtpResend}
                   isLoading={loading}
                   attemptsLeft={attemptsLeft}
+                  mockOtp={mockOtp}
                 />
               )}
             </motion.div>

@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
       mockOtp = Math.floor(100000 + Math.random() * 900000).toString()
       
       // Store in cache for verification
-      await cacheSet(`aadhaar_otp:${txnId}`, mockOtp, 600)
-      await cacheSet(`aadhaar_txn:${txnId}`, { aadhaarHash, isMock: true }, 600)
+      await cacheSet(`aadhaar_otp:${txnId}`, mockOtp, 120)
+      await cacheSet(`aadhaar_txn:${txnId}`, { aadhaarHash, isMock: true }, 120)
       
       console.log(`[UIDAI OTP SIMULATION] Txn ID: ${txnId} | Hash: ${aadhaarHash} | Mock OTP: ${mockOtp}`)
     } else {
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Store session state in cache (no raw Aadhaar)
-      await cacheSet(`aadhaar_txn:${txnId}`, { aadhaarHash, isMock: false }, 600)
+      await cacheSet(`aadhaar_txn:${txnId}`, { aadhaarHash, isMock: false }, 120)
     }
 
     // Write audit log

@@ -29,6 +29,7 @@ export default function AadhaarRegisterWizard() {
   
   // Decrypted eKYC demographic data from UIDAI
   const [kycData, setKycData] = useState<any>(null)
+  const [mockOtp, setMockOtp] = useState<string | null>(null)
 
   // 3-second timer transition for OTP waiting screen in Step 3
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function AadhaarRegisterWizard() {
       }
 
       setAadhaarHash(data.aadhaarHash)
+      setMockOtp(data.mockOtp || null)
       
       // If mock OTP was returned, display it in a prominent Sonner toast
       if (data.mockOtp) {
@@ -147,6 +149,7 @@ export default function AadhaarRegisterWizard() {
       }
 
       if (data.mockOtp) {
+        setMockOtp(data.mockOtp)
         toast.success(`[SIMULATION] UIDAI OTP dispatched: ${data.mockOtp}`, {
           duration: 10000,
           position: 'top-center'
@@ -282,6 +285,7 @@ export default function AadhaarRegisterWizard() {
                   onResend={handleOtpResend}
                   isLoading={loading}
                   attemptsLeft={attemptsLeft}
+                  mockOtp={mockOtp}
                 />
               )}
             </motion.div>

@@ -43,12 +43,17 @@ export function isDigiLockerConfigured(): boolean {
   )
 }
 
+export function getRedirectUri(): string {
+  const uri = process.env.DIGILOCKER_REDIRECT_URI || 'http://localhost:3000/api/auth/digilocker/callback'
+  return uri.replace(/^(https?)\?\/\//, '$1://')
+}
+
 /**
  * Get DigiLocker Authorize Redirect URL
  */
 export function getDigiLockerAuthUrl(state: string, challenge: string): string {
   const authUrl = process.env.DIGILOCKER_AUTH_URL || 'https://digilocker.gov.in/public/oauth2/1/authorize'
-  const redirectUri = process.env.DIGILOCKER_REDIRECT_URI || 'http://localhost:3000/api/auth/digilocker/callback'
+  const redirectUri = getRedirectUri()
   const clientId = process.env.DIGILOCKER_CLIENT_ID || 'mock_client_id'
 
   const params = new URLSearchParams({
@@ -75,7 +80,7 @@ export async function exchangeCodeForToken(code: string, verifier: string): Prom
 
   try {
     const tokenUrl = process.env.DIGILOCKER_TOKEN_URL || 'https://api.digitallocker.gov.in/public/oauth2/1/token'
-    const redirectUri = process.env.DIGILOCKER_REDIRECT_URI || 'http://localhost:3000/api/auth/digilocker/callback'
+    const redirectUri = getRedirectUri()
     
     const params = new URLSearchParams({
       code,
