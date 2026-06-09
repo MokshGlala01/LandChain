@@ -22,6 +22,7 @@ export default function AadhaarRegisterWizard() {
 
   // State shared across wizard steps
   const [aadhaarNum, setAadhaarNum] = useState('')
+  const [phone, setPhone] = useState('')
   const [txnId, setTxnId] = useState('')
   const [aadhaarHash, setAadhaarHash] = useState('')
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null)
@@ -42,10 +43,13 @@ export default function AadhaarRegisterWizard() {
   }, [step, showOtpInputs])
 
   // Step 2: Submit Aadhaar & request OTP
-  const handleAadhaarSubmit = async (aadhaar: string) => {
+  const handleAadhaarSubmit = async (aadhaar: string, phoneInput?: string) => {
     setLoading(true)
     setError('')
     setAadhaarNum(aadhaar)
+    if (phoneInput) {
+      setPhone(phoneInput)
+    }
 
     const newTxnId = crypto.randomUUID()
     setTxnId(newTxnId)
@@ -54,7 +58,7 @@ export default function AadhaarRegisterWizard() {
       const res = await fetch('/api/auth/aadhaar/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaar, txnId: newTxnId })
+        body: JSON.stringify({ aadhaar, txnId: newTxnId, phone: phoneInput })
       })
 
       const data = await res.json()
@@ -139,7 +143,7 @@ export default function AadhaarRegisterWizard() {
       const res = await fetch('/api/auth/aadhaar/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaar: aadhaarNum, txnId })
+        body: JSON.stringify({ aadhaar: aadhaarNum, txnId, phone })
       })
 
       const data = await res.json()
@@ -180,6 +184,7 @@ export default function AadhaarRegisterWizard() {
           name: kycData.name,
           dob: kycData.dob,
           gender: kycData.gender,
+          phone: kycData.phone,
           email: profile.email,
           role: profile.role,
           language: profile.language,
@@ -264,7 +269,7 @@ export default function AadhaarRegisterWizard() {
               exit="exit"
               transition={{ duration: 0.25 }}
             >
-              <AadhaarInput onSubmit={handleAadhaarSubmit} isLoading={loading} />
+              <AadhaarInput onSubmit={handleAadhaarSubmit} isLoading={loading} isRegister={true} />
             </motion.div>
           )}
 

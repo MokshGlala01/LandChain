@@ -78,6 +78,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const phone = cachedAuth?.phone || null
+
     // Clear caches
     await cacheDel(`aadhaar_txn:${txnId}`)
     await cacheDel(`aadhaar_auth:${txnId}`)
@@ -88,7 +90,8 @@ export async function POST(req: NextRequest) {
       dob: kycData.dob,
       gender: kycData.gender,
       address: kycData.address,
-      photo: kycData.photo
+      photo: kycData.photo,
+      phone
     })
   } catch (error: any) {
     console.error('UIDAI eKYC error:', error)

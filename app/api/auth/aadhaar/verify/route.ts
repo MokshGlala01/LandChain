@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Store auth code temporarily (TTL 5 minutes)
-    await cacheSet(`aadhaar_auth:${txnId}`, { authCode, aadhaarHash, isMock: txnData.isMock }, 300)
+    await cacheSet(`aadhaar_auth:${txnId}`, { authCode, aadhaarHash, isMock: txnData.isMock, phone: txnData.phone }, 300)
 
     // Clear session status
     await cacheDel(failKey)

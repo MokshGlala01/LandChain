@@ -223,6 +223,42 @@ export async function parseUidaiResponse(xmlStr: string): Promise<any> {
  * Mock data generation for testing offline fallback
  */
 export function getMockKycData(aadhaarHash: string) {
+  const pepper = process.env.AADHAAR_HASH_PEPPER || 'default_aadhaar_pepper_min_32_chars_long_for_security'
+  const hash1234 = crypto.createHash('sha256').update('123456789012' + pepper).digest('hex')
+  const hash8888 = crypto.createHash('sha256').update('888888888888' + pepper).digest('hex')
+  const hash7777 = crypto.createHash('sha256').update('777777777777' + pepper).digest('hex')
+
+  if (aadhaarHash === 'aadhaar_123456789012' || aadhaarHash === hash1234) {
+    return {
+      name: 'Rohan Sharma',
+      dob: '1990-01-01',
+      gender: 'Male',
+      address: 'Sector 62, Noida, Uttar Pradesh, 201301',
+      photo: '',
+      co: 'C/O Sharma'
+    }
+  }
+  if (aadhaarHash === 'aadhaar_888888888888' || aadhaarHash === hash8888) {
+    return {
+      name: 'Officer Amit Kumar',
+      dob: '1980-04-12',
+      gender: 'Male',
+      address: 'Government Quarters, Sector 2, Noida, Uttar Pradesh, 201301',
+      photo: '',
+      co: 'C/O India'
+    }
+  }
+  if (aadhaarHash === 'aadhaar_777777777777' || aadhaarHash === hash7777) {
+    return {
+      name: 'SBI Verifier Officer',
+      dob: '1985-09-25',
+      gender: 'Male',
+      address: 'SBI Building, Shivaji Nagar, Pune, Maharashtra, 411005',
+      photo: '',
+      co: 'C/O State Bank of India'
+    }
+  }
+
   // Use hash to deterministically generate some details for consistent mock logins
   const isAlt = aadhaarHash.charCodeAt(0) % 2 === 0
   return {

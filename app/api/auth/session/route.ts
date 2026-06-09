@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
       dob,
       gender,
       email,
+      phone,
       role,
       language,
       uidaiTxnId
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
           dob: dob ? new Date(dob) : null,
           gender,
           email: email || null,
+          phone: phone || null,
           role: dbRole,
           language: language || 'en',
           kycVerifiedAt: new Date(),

@@ -5,17 +5,24 @@ import { verifyAadhaarChecksum } from '@/lib/aadhaar-validator'
 import { IconInfoCircle, IconCheck, IconAlertCircle } from '@tabler/icons-react'
 
 interface AadhaarInputProps {
-  onSubmit: (aadhaar: string) => void;
+  onSubmit: (aadhaar: string, phone?: string) => void;
   isLoading?: boolean;
+  isRegister?: boolean;
 }
 
-export default function AadhaarInput({ onSubmit, isLoading = false }: AadhaarInputProps) {
+export default function AadhaarInput({ onSubmit, isLoading = false, isRegister = false }: AadhaarInputProps) {
   const [rawValue, setRawValue] = useState('')
   const [useVid, setUseVid] = useState(false)
   const [isValid, setIsValid] = useState<boolean | null>(null)
   const [focused, setFocused] = useState(false)
 
+  // Phone states
+  const [phoneRaw, setPhoneRaw] = useState('')
+  const [phoneFocused, setPhoneFocused] = useState(false)
+
   const maxDigits = useVid ? 16 : 12
+  const isPhoneValid = /^\d{10}$/.test(phoneRaw)
+  const canSubmit = isValid === true && (!isRegister || isPhoneValid) && !isLoading
 
   // Validate on input change
   useEffect(() => {
@@ -61,79 +68,124 @@ export default function AadhaarInput({ onSubmit, isLoading = false }: AadhaarInp
     return chunks.join(' ')
   }
 
+  const handleFormSubmit = () => {
+    if (canSubmit) {
+      onSubmit(rawValue, isRegister ? phoneRaw : undefined)
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && isValid && !isLoading) {
-      onSubmit(rawValue)
+    if (e.key === 'Enter') {
+      handleFormSubmit()
     }
   }
 
   return (
     <div className="flex flex-col space-y-5">
-      <div className="flex justify-between items-center">
-        <label className="text-sm font-semibold text-gray-800">
-          {useVid ? 'Virtual ID (VID)' : 'Aadhaar Number'}
-        </label>
-        <button
-          type="button"
-          onClick={toggleVid}
-          className="text-xs text-[#0F6E56] hover:text-[#085041] font-medium transition-colors hover:underline"
-        >
-          {useVid ? 'Use Aadhaar Number instead' : 'Use Virtual ID instead'}
-        </button>
-      </div>
-
-      <div className="relative">
-        {/* Underlay for premium visual formatting (Bullet points + spacing) */}
-        <div 
-          className={`absolute inset-0 flex items-center px-4 py-3 rounded-xl border pointer-events-none transition-all duration-200 text-lg font-mono ${
-            focused 
-              ? 'border-emerald-500 bg-white ring-1 ring-emerald-500/20' 
-              : 'border-slate-200 bg-slate-50'
-          }`}
-        >
-          {rawValue.length > 0 ? (
-            <span className="text-slate-900 tracking-wider">{getDisplayValue()}</span>
-          ) : (
-            <span className="text-slate-400 select-none">
-              {useVid ? '●●●● ●●●● ●●●● ●●●●' : '●●●● ●●●● ●●●●'}
-            </span>
-          )}
+      {/* Aadhaar Field Group */}
+      <div className="flex flex-col space-y-2">
+        <div className="flex justify-between items-center">
+          <label className="text-sm font-semibold text-gray-800">
+            {useVid ? 'Virtual ID (VID)' : 'Aadhaar Number'}
+          </label>
+          <button
+            type="button"
+            onClick={toggleVid}
+            className="text-xs text-[#0F6E56] hover:text-[#085041] font-medium transition-colors hover:underline"
+          >
+            {useVid ? 'Use Aadhaar Number instead' : 'Use Virtual ID instead'}
+          </button>
         </div>
 
-        {/* Real hidden/transparent input styled directly on top */}
-        <input
-          type="tel"
-          value={rawValue}
-          onChange={handleInputChange}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onKeyDown={handleKeyDown}
-          maxLength={maxDigits + (useVid ? 3 : 2)} // Allow buffer for paste
-          autoComplete="off"
-          spellCheck="false"
-          className="w-full px-4 py-3 rounded-xl border border-transparent bg-transparent text-transparent caret-[#0F6E56] text-lg font-mono tracking-wider focus:outline-none focus:border-transparent select-all"
-        />
+        <div className="relative">
+          {/* Underlay for premium visual formatting (Bullet points + spacing) */}
+          <div 
+            className={`absolute inset-0 flex items-center px-4 py-3 rounded-xl border pointer-events-none transition-all duration-200 text-lg font-mono ${
+              focused 
+                ? 'border-emerald-500 bg-white ring-1 ring-emerald-500/20' 
+                : 'border-slate-200 bg-slate-50'
+            }`}
+          >
+            {rawValue.length > 0 ? (
+              <span className="text-slate-900 tracking-wider">{getDisplayValue()}</span>
+            ) : (
+              <span className="text-slate-400 select-none">
+                {useVid ? '●●●● ●●●● ●●●● ●●●●' : '●●●● ●●●● ●●●●'}
+              </span>
+            )}
+          </div>
 
-        {/* Validation indicator icons */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-          {isValid === true && (
-            <span className="p-1 bg-emerald-100 text-emerald-700 rounded-full">
-              <IconCheck className="w-4 h-4" />
-            </span>
-          )}
-          {isValid === false && (
-            <span className="p-1 bg-red-100 text-red-700 rounded-full" title="Invalid Checksum">
-              <IconAlertCircle className="w-4 h-4" />
-            </span>
-          )}
+          {/* Real hidden/transparent input styled directly on top */}
+          <input
+            type="tel"
+            value={rawValue}
+            onChange={handleInputChange}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={handleKeyDown}
+            maxLength={maxDigits + (useVid ? 3 : 2)} // Allow buffer for paste
+            autoComplete="off"
+            spellCheck="false"
+            className="w-full px-4 py-3 rounded-xl border border-transparent bg-transparent text-transparent caret-[#0F6E56] text-lg font-mono tracking-wider focus:outline-none focus:border-transparent select-all"
+          />
+
+          {/* Validation indicator icons */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+            {isValid === true && (
+              <span className="p-1 bg-emerald-100 text-emerald-700 rounded-full">
+                <IconCheck className="w-4 h-4" />
+              </span>
+            )}
+            {isValid === false && (
+              <span className="p-1 bg-red-100 text-red-700 rounded-full" title="Invalid Checksum">
+                <IconAlertCircle className="w-4 h-4" />
+              </span>
+            )}
+          </div>
         </div>
+
+        {isValid === false && (
+          <p className="text-xs text-red-600 flex items-center space-x-1 mt-1">
+            <IconAlertCircle className="w-4 h-4 shrink-0" />
+            <span>Incorrect checksum (failed Verhoeff verification). Check digits.</span>
+          </p>
+        )}
       </div>
 
-      {isValid === false && (
-        <p className="text-xs text-red-600 flex items-center space-x-1">
-          <IconAlertCircle className="w-4 h-4 shrink-0" />
-          <span>Incorrect checksum (failed Verhoeff verification). Check digits.</span>
-        </p>
+      {/* Mobile Number Field Group (only for Registration) */}
+      {isRegister && (
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-semibold text-gray-800">
+            Registered Mobile Number
+          </label>
+          <div className="relative">
+            <input
+              type="tel"
+              value={phoneRaw}
+              onChange={(e) => setPhoneRaw(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onFocus={() => setPhoneFocused(true)}
+              onBlur={() => setPhoneFocused(false)}
+              onKeyDown={handleKeyDown}
+              maxLength={10}
+              placeholder="Enter 10-digit mobile number"
+              className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 text-slate-900 placeholder-slate-400 bg-slate-50 focus:bg-white focus:outline-none ${
+                phoneFocused 
+                  ? 'border-emerald-500 ring-1 ring-emerald-500/20' 
+                  : 'border-slate-200'
+              }`}
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+              {isPhoneValid && (
+                <span className="p-1 bg-emerald-100 text-emerald-700 rounded-full">
+                  <IconCheck className="w-4 h-4" />
+                </span>
+              )}
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-400">
+            This number will receive the OTP for registration.
+          </p>
+        </div>
       )}
 
       {/* Amber Notice Banner */}
@@ -150,10 +202,10 @@ export default function AadhaarInput({ onSubmit, isLoading = false }: AadhaarInp
 
       <button
         type="button"
-        disabled={!isValid || isLoading}
-        onClick={() => onSubmit(rawValue)}
+        disabled={!canSubmit}
+        onClick={handleFormSubmit}
         className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 flex justify-center items-center ${
-          isValid && !isLoading
+          canSubmit
             ? 'bg-[#0F6E56] text-white hover:bg-[#085041] shadow-lg shadow-emerald-900/10 active:scale-[0.98]'
             : 'bg-slate-100 text-slate-400 cursor-not-allowed'
         }`}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generatePKCE, getDigiLockerAuthUrl } from '@/lib/digilocker'
+import { generatePKCE, getDigiLockerAuthUrl, isDigiLockerConfigured } from '@/lib/digilocker'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +8,16 @@ export async function GET(req: NextRequest) {
     const state = crypto.randomUUID()
     const { verifier, challenge } = generatePKCE()
 
-    const authUrl = getDigiLockerAuthUrl(state, challenge)
+    let authUrl = getDigiLockerAuthUrl(state, challenge)
+
+    if (!isDigiLockerConfigured()) {
+      // Mock bypass: redirect directly to the local callback
+      const callbackUrl = new URL('/api/auth/digilocker/callback', req.nextUrl.origin)
+      callbackUrl.searchParams.set('code', 'mock_auth_code_xyz')
+      callbackUrl.searchParams.set('state', state)
+      authUrl = callbackUrl.toString()
+    }
+
     const response = NextResponse.redirect(authUrl)
 
     // Store state and verifier in cookies (valid for 10 minutes)
