@@ -63,12 +63,12 @@ export default function CitizenDocumentsPage() {
   const [filterType, setFilterType] = useState("All");
 
   const docTypes: DocumentType[] = [
-    { id: "Sale Deed", name: "Sale Deed", description: "Official transfer deed confirming purchase/sale alignment.", icon: IconFileText },
-    { id: "Gift Deed", name: "Gift Deed", description: "Voluntary title transfer deed between blood relatives.", icon: IconFileText },
-    { id: "Partition Deed", name: "Partition Deed", description: "Deed dividing joint holdings into individual titles.", icon: IconFileText },
-    { id: "EC", name: "Encumbrance Certificate", description: "Official certificate detailing past legal claims or liabilities.", icon: IconFileText },
-    { id: "Khata", name: "Khata Certificate", description: "Municipality registry ledger transcript copy.", icon: IconFileText },
-    { id: "Tax Receipt", name: "Property Tax Receipt", description: "Authorized receipt copy of paid property taxes.", icon: IconFileText },
+    { id: "saleDeed", name: "Sale Deed", description: "Official transfer deed confirming purchase/sale alignment.", icon: IconFileText },
+    { id: "giftDeed", name: "Gift Deed", description: "Voluntary title transfer deed between blood relatives.", icon: IconFileText },
+    { id: "partitionDeed", name: "Partition Deed", description: "Deed dividing joint holdings into individual titles.", icon: IconFileText },
+    { id: "encumbrance", name: "Encumbrance Certificate", description: "Official certificate detailing past legal claims or liabilities.", icon: IconFileText },
+    { id: "khata", name: "Khata Certificate", description: "Municipality registry ledger transcript copy.", icon: IconFileText },
+    { id: "taxReceipt", name: "Property Tax Receipt", description: "Authorized receipt copy of paid property taxes.", icon: IconFileText },
   ];
 
   const loadProperties = async () => {

@@ -11,10 +11,15 @@ model User {
   id            String     @id @default(cuid())
   aadhaarHash   String     @unique
   name          String
-  phone         String
+  phone         String?
   email         String?
   role          String     @default("CITIZEN")
   walletAddress String?
+  dob           DateTime?
+  gender        String?
+  language      String?
+  kycVerifiedAt DateTime?
+  kycMethod     String?
   properties    Property[]
   createdAt     DateTime   @default(now())
 }
@@ -52,8 +57,8 @@ model Transfer {
 model AuditLog {
   id         String   @id @default(cuid())
   action     String
-  entityId   String
-  entityType String
+  entityId   String?
+  entityType String?
   actorId    String
   metadata   String
   timestamp  DateTime @default(now())

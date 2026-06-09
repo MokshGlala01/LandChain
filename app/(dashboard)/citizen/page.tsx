@@ -143,6 +143,7 @@ export default function CitizenDashboard() {
       if (data.simulatedOtp) {
         setSimulatedOtp(data.simulatedOtp);
         setShowSmsBanner(true);
+        toast.info(`[Testing SIM] Aadhaar Secure OTP: ${data.simulatedOtp}`);
       }
       setKycOtpSent(true);
       toast.success("Identity verification OTP dispatched.");
@@ -521,6 +522,11 @@ export default function CitizenDashboard() {
                       <div className="p-2.5 bg-emerald-500/10 border border-emerald-250 rounded-element text-[10px] text-emerald-600">
                         OTP code sent to: {kycMaskedPhone}
                       </div>
+                      {simulatedOtp && (
+                        <div className="p-2.5 bg-slate-900 border border-slate-700 text-white rounded-element text-[10px] font-mono leading-normal">
+                          [OTP SIMULATOR]: UIDAI Authentication code is <strong>{simulatedOtp}</strong>
+                        </div>
+                      )}
                       <div className="space-y-1">
                         <label className="text-[10px] font-heading font-bold uppercase text-slate-400">verification code</label>
                         <input

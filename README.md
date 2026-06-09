@@ -45,6 +45,26 @@ LandChain includes 6 fully functional role-based dashboards protected by role-ba
 
 ---
 
+## 🔐 Aadhaar & DigiLocker Authentication System
+
+LandChain features a complete user registration and login system utilizing real Aadhaar OTP (UIDAI) and DigiLocker OAuth:
+
+- **Privacy & Compliance**:
+  - Raw Aadhaar numbers are never stored in databases, logs, sessions, or memory.
+  - User identities are indexed via a secure `SHA-256(aadhaar + PEPPER)` hash.
+  - Compliant with the Aadhaar Act, 2016 (Section 8) and DPDP Act, 2023.
+- **Authentication Methods**:
+  - **Aadhaar OTP Flow**: Employs signed XML payloads for OTP dispatch, verification, and eKYC demographics retrieval.
+  - **DigiLocker OAuth Flow**: Integrates PKCE S256 OAuth authentication, token exchanges, and eAadhaar XML retrieval and parsing.
+- **Local Simulation Fallback**:
+  - If AUA certificates or DigiLocker client secrets are unconfigured, the system automatically falls back to secure simulation mode.
+  - Simulated OTP codes are output in the terminal and rendered on-screen via Sonner toast overlays, facilitating smooth offline development.
+- **Session Security**:
+  - Secure cookie-based JWT sessions (`lc_session` via `jose`) with HTTPOnly, Secure, and SameSite=Strict properties.
+  - Next.js Edge-compatible middleware restricts dashboard views (`/citizen`, `/registrar`, `/bank`, etc.) based on authenticated roles.
+
+---
+
 ## 🛠️ Technology Stack
 
 - **Framework**: Next.js 14 (App Router, TypeScript)

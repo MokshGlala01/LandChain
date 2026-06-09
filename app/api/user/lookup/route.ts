@@ -8,11 +8,33 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const aadhaarHashParam = searchParams.get("aadhaarHash");
     const aadhaar = searchParams.get("aadhaar");
+
+    // If looking up by pre-computed hash, return user details immediately (used by AuthProvider sync)
+    if (aadhaarHashParam) {
+      const user = await prisma.user.findUnique({
+        where: { aadhaarHash: aadhaarHashParam },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+      });
+    }
 
     if (!aadhaar) {
       return NextResponse.json(
-        { error: "Missing required query parameter: aadhaar." },
+        { error: "Missing required query parameter: aadhaar or aadhaarHash." },
         { status: 400 }
       );
     }
@@ -49,7 +71,7 @@ export async function GET(req: Request) {
 
     // 3. Dispatch SMS via Twilio
     const messageBody = `LandChain Verification: Your Aadhaar Secure OTP is ${otp}. Valid for 5 minutes. Do not share this code.`;
-    const sentRealSms = await sendTwilioSms(rawPhone, messageBody);
+    const sentRealSms = await sendTwilioSms(rawPhone || "", messageBody);
 
     // 4. If SMS could not be sent (Twilio not configured), return the simulated OTP for offline display
     const simulatedOtp = sentRealSms ? null : otp;

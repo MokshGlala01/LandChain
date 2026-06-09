@@ -16,7 +16,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (aadhaar: string, role?: string) => Promise<boolean>;
+  login: (aadhaarOrHash: string, role?: string, customName?: string) => Promise<boolean>;
   logout: () => void;
   connectWallet: () => Promise<string | null>;
   walletAddress: string | null;
@@ -48,34 +48,35 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (aadhaar: string, selectedRole: string = "CITIZEN") => {
-    const cleanAadhaar = aadhaar.replace(/\s/g, "");
-    const mockHash = "aadhaar_" + cleanAadhaar;
+  const login = async (aadhaarOrHash: string, selectedRole: string = "CITIZEN", customName?: string) => {
+    let aadhaarHash = aadhaarOrHash.replace(/\s/g, "");
+    if (aadhaarHash.length === 12 && !isNaN(Number(aadhaarHash))) {
+      aadhaarHash = "aadhaar_" + aadhaarHash;
+    }
     
-    // Default mock profiles in case API fails
     let id = "usr_" + Math.random().toString(36).substring(2, 9);
-    let name = "Rohan Sharma";
+    let name = customName || "Rohan Sharma";
     let phone = "+91 98765 43210";
     let role = selectedRole;
 
     try {
-      const res = await fetch(`/api/user/lookup?aadhaar=${encodeURIComponent(cleanAadhaar)}`);
+      const res = await fetch(`/api/user/lookup?aadhaarHash=${encodeURIComponent(aadhaarHash)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.id) {
           id = data.id;
         }
         name = data.name;
-        phone = data.phone;
+        phone = data.phone || phone;
         role = data.role;
       }
     } catch (err) {
-      console.warn("User lookup failed during login provider setup, using default mock details.");
+      console.warn("User lookup failed during login provider setup, using default details.");
     }
 
     const mockUser: User = {
       id,
-      aadhaarHash: mockHash,
+      aadhaarHash,
       name,
       phone,
       role: role as any,

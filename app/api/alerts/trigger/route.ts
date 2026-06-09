@@ -43,7 +43,7 @@ export async function POST(req: Request) {
             `LandChain Watchlist Alert: ${eventType.toUpperCase()}`,
             message,
             {
-              phone: user.phone,
+              phone: user.phone || undefined,
               emailAddress: user.email || undefined,
               expoPushToken: device?.expoPushToken || undefined,
             }
