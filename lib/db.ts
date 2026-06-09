@@ -4,7 +4,7 @@ import fs from "fs";
 
 let dbPath: string;
 
-if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+if (process.env.VERCEL) {
   // On Vercel, the file system is read-only. We copy the SQLite database to the writable /tmp folder.
   const tempDbPath = "/tmp/dev.db";
   const bundledDbPath = path.resolve(process.cwd(), "prisma/dev.db");
