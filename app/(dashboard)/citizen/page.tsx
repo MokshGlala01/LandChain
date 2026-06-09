@@ -36,6 +36,13 @@ interface Property {
   status: string;
 }
 
+const stateDistricts: Record<string, string[]> = {
+  "Uttar Pradesh": ["Gautam Buddha Nagar (Noida)", "Ghaziabad", "Lucknow", "Kanpur"],
+  "Delhi": ["South Delhi", "New Delhi", "North Delhi", "West Delhi"],
+  "Haryana": ["Gurugram", "Faridabad", "Sonipat", "Rohtak"],
+  "Maharashtra": ["Mumbai Suburban", "Mumbai City", "Pune", "Thane"],
+};
+
 export default function CitizenDashboard() {
   const { user, walletAddress, connectWallet } = useAuth();
   const router = useRouter();
@@ -72,7 +79,8 @@ export default function CitizenDashboard() {
   const [area, setArea] = useState("");
   const [location, setLocation] = useState("");
   const [propertyType, setPropertyType] = useState("Residential");
-  const [district, setDistrict] = useState("Gautam Buddha Nagar");
+  const [selectedState, setSelectedState] = useState("Uttar Pradesh");
+  const [district, setDistrict] = useState("Gautam Buddha Nagar (Noida)");
 
   // Step 3: Document Upload State
   const [deedFile, setDeedFile] = useState<File | null>(null);
@@ -412,6 +420,8 @@ export default function CitizenDashboard() {
     setDeedHash("");
     setIpfsCid("");
     setDrawnPoints([]);
+    setSelectedState("Uttar Pradesh");
+    setDistrict("Gautam Buddha Nagar (Noida)");
   };
 
   // Initiate Transfer Submit
@@ -724,7 +734,7 @@ export default function CitizenDashboard() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] uppercase font-heading font-bold text-slate-400">Property Type</label>
                         <select
@@ -739,16 +749,40 @@ export default function CitizenDashboard() {
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-heading font-bold text-slate-400">District State</label>
+                        <label className="text-[10px] uppercase font-heading font-bold text-slate-400">State</label>
+                        <select
+                          value={selectedState}
+                          onChange={(e) => {
+                            const newState = e.target.value;
+                            setSelectedState(newState);
+                            const districts = stateDistricts[newState] || [];
+                            if (districts.length > 0) {
+                              setDistrict(districts[0]);
+                            } else {
+                              setDistrict("");
+                            }
+                          }}
+                          className="w-full px-4 py-3 rounded-element bg-slate-50 dark:bg-slate-900/50 border-[0.5px] border-slate-200 dark:border-slate-800 text-sm focus:outline-none"
+                        >
+                          {Object.keys(stateDistricts).map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-heading font-bold text-slate-400">District</label>
                         <select
                           value={district}
                           onChange={(e) => setDistrict(e.target.value)}
                           className="w-full px-4 py-3 rounded-element bg-slate-50 dark:bg-slate-900/50 border-[0.5px] border-slate-200 dark:border-slate-800 text-sm focus:outline-none"
                         >
-                          <option>Gautam Buddha Nagar (Noida)</option>
-                          <option>South Delhi</option>
-                          <option>Gurugram</option>
-                          <option>Mumbai Suburban</option>
+                          {(stateDistricts[selectedState] || []).map((dst) => (
+                            <option key={dst} value={dst}>
+                              {dst}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
