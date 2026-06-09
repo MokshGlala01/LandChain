@@ -10,6 +10,20 @@ async function main() {
   await prisma.transfer.deleteMany({});
   await prisma.property.deleteMany({});
   await prisma.user.deleteMany({});
+  await prisma.aIConversation.deleteMany({});
+  await prisma.circleRate.deleteMany({});
+  await prisma.stampDutyRate.deleteMany({});
+  await prisma.watchlistAlert.deleteMany({});
+  await prisma.bankWebhook.deleteMany({});
+  await prisma.nominee.deleteMany({});
+  await prisma.will.deleteMany({});
+  await prisma.apiKey.deleteMany({});
+  await prisma.flat.deleteMany({});
+  await prisma.society.deleteMany({});
+  await prisma.carbonParcel.deleteMany({});
+  await prisma.userDevice.deleteMany({});
+  await prisma.publicNotice.deleteMany({});
+  await prisma.agriculturalDetails.deleteMany({});
 
   // 2. Create Users
   const citizen = await prisma.user.create({
@@ -81,6 +95,61 @@ async function main() {
         txHash: property.blockchainTxHash,
       }),
     },
+  });
+
+  // 5. Seed Circle Rates
+  await prisma.circleRate.createMany({
+    data: [
+      { state: "Uttar Pradesh", district: "Gautam Buddha Nagar (Noida)", propertyType: "Residential", ratePerSqft: 5000, year: 2026 },
+      { state: "Uttar Pradesh", district: "Gautam Buddha Nagar (Noida)", propertyType: "Commercial", ratePerSqft: 12000, year: 2026 },
+      { state: "Delhi", district: "South Delhi", propertyType: "Residential", ratePerSqft: 15000, year: 2026 },
+      { state: "Delhi", district: "South Delhi", propertyType: "Commercial", ratePerSqft: 35000, year: 2026 },
+      { state: "Haryana", district: "Gurugram", propertyType: "Residential", ratePerSqft: 8000, year: 2026 },
+      { state: "Haryana", district: "Gurugram", propertyType: "Commercial", ratePerSqft: 18000, year: 2026 },
+      { state: "Maharashtra", district: "Mumbai Suburban", propertyType: "Residential", ratePerSqft: 18000, year: 2026 },
+      { state: "Maharashtra", district: "Mumbai Suburban", propertyType: "Commercial", ratePerSqft: 40000, year: 2026 },
+    ]
+  });
+
+  // 6. Seed Stamp Duty Rates
+  await prisma.stampDutyRate.createMany({
+    data: [
+      { state: "Uttar Pradesh", propertyType: "Residential", relationship: "unrelated", dutyPercent: 7.0, regFeePercent: 1.0 },
+      { state: "Uttar Pradesh", propertyType: "Residential", relationship: "family", dutyPercent: 2.0, regFeePercent: 1.0 },
+      { state: "Delhi", propertyType: "Residential", relationship: "unrelated", dutyPercent: 6.0, regFeePercent: 1.0 },
+      { state: "Delhi", propertyType: "Residential", relationship: "family", dutyPercent: 3.0, regFeePercent: 1.0 },
+      { state: "Haryana", propertyType: "Residential", relationship: "unrelated", dutyPercent: 5.0, regFeePercent: 1.0 },
+      { state: "Haryana", propertyType: "Residential", relationship: "family", dutyPercent: 2.0, regFeePercent: 1.0 },
+      { state: "Maharashtra", propertyType: "Residential", relationship: "unrelated", dutyPercent: 6.0, regFeePercent: 1.0 },
+      { state: "Maharashtra", propertyType: "Residential", relationship: "family", dutyPercent: 3.0, regFeePercent: 1.0 },
+    ]
+  });
+
+  // 7. Seed API Keys
+  await prisma.apiKey.create({
+    data: {
+      keyHash: "key_mock_sbi_12345",
+      institutionName: "State Bank of India",
+      role: "BANK",
+      dailyLimit: 2000,
+      active: true,
+    }
+  });
+
+  // 8. Seed Agricultural Details
+  await prisma.agriculturalDetails.create({
+    data: {
+      parcelId: "PARCEL-4902-881",
+      cropHistory: JSON.stringify([
+        { season: "Kharif 2024", crop: "Paddy", yieldTons: 4.5 },
+        { season: "Rabi 2024", crop: "Wheat", yieldTons: 3.8 },
+      ]),
+      soilType: "Alluvial Clay",
+      irrigationSource: "Tubewell & Canal",
+      productivityScore: 8.5,
+      currentCrop: "Paddy",
+      pmKisanBeneficiary: true,
+    }
   });
 
   console.log("Seeding completed successfully!");

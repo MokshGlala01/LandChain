@@ -31,6 +31,18 @@ const config: Config = {
           DEFAULT: '#BA7517',
           light: '#FAEEDA',
         },
+        purple: {
+          DEFAULT: '#534AB7',
+          light: '#EEEDFE',
+        },
+        red: {
+          DEFAULT: '#A32D2D',
+          light: '#FCEBEB',
+        },
+        green: {
+          DEFAULT: '#3B6D11',
+          light: '#EAF3DE',
+        },
       },
       borderRadius: {
         card: "12px",

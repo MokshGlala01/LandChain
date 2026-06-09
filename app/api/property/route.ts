@@ -95,12 +95,24 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const ownerId = searchParams.get("ownerId");
     const query = searchParams.get("query") || "";
     const type = searchParams.get("type") || "parcelId"; // parcelId, surveyNumber, ownerName
 
     let properties = [];
 
-    if (!query) {
+    if (ownerId) {
+      properties = await prisma.property.findMany({
+        where: { ownerId },
+        include: {
+          owner: true,
+          transfers: {
+            orderBy: { initiatedAt: "desc" },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } else if (!query) {
       properties = await prisma.property.findMany({
         include: {
           owner: true,

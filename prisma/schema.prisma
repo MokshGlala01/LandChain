@@ -58,3 +58,137 @@ model AuditLog {
   metadata   String
   timestamp  DateTime @default(now())
 }
+
+model AIConversation {
+  id        String   @id @default(cuid())
+  userId    String?
+  messages  String   // JSON message history serialized as String
+  createdAt DateTime @default(now())
+}
+
+model CircleRate {
+  id           String @id @default(cuid())
+  state        String
+  district     String
+  propertyType String
+  ratePerSqft  Float
+  year         Int
+}
+
+model StampDutyRate {
+  id           String @id @default(cuid())
+  state        String
+  propertyType String
+  relationship String
+  dutyPercent  Float
+  regFeePercent Float
+}
+
+model WatchlistAlert {
+  id         String   @id @default(cuid())
+  userId     String
+  parcelId   String
+  alertTypes String   // Comma-separated alert types
+  active     Boolean  @default(true)
+}
+
+model BankWebhook {
+  id              String   @id @default(cuid())
+  bankId          String
+  url             String
+  subscribedEvents String  // Comma-separated event types
+  active          Boolean  @default(true)
+  secret          String
+}
+
+model Will {
+  id          String     @id @default(cuid())
+  ownerId     String     @unique
+  ipfsHash    String
+  txHash      String
+  nominees    Nominee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Nominee {
+  id           String  @id @default(cuid())
+  willId       String
+  will         Will    @relation(fields: [willId], references: [id], onDelete: Cascade)
+  aadhaarHash  String
+  name         String
+  relationship String
+  sharePercent Float
+}
+
+model ApiKey {
+  id              String   @id @default(cuid())
+  keyHash         String   @unique
+  institutionName String
+  role            String
+  dailyLimit      Int      @default(1000)
+  usageCount      Int      @default(0)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model Society {
+  id          String @id @default(cuid())
+  name        String
+  reraNumber  String @unique
+  builderId   String
+  address     String
+  totalUnits  Int
+  flats       Flat[]
+  registeredAt DateTime @default(now())
+}
+
+model Flat {
+  id          String  @id @default(cuid())
+  societyId   String
+  society     Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flatNumber  String
+  floor       Int
+  areaSqft    Float
+  ownerId     String?
+  nftTokenId  String?
+  status      String  @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD
+}
+
+model CarbonParcel {
+  id                      String   @id @default(cuid())
+  parcelId                String   @unique
+  greenCoverHectares      Float
+  carbonSequestrationTons Float
+  creditsIssued           Float
+  lastVerified            DateTime
+}
+
+model UserDevice {
+  id         String @id @default(cuid())
+  userId     String
+  expoPushToken String
+  platform   String
+  createdAt  DateTime @default(now())
+}
+
+model PublicNotice {
+  id        String   @id @default(cuid())
+  parcelId  String
+  filerName String
+  contact   String
+  reason    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AgriculturalDetails {
+  id              String @id @default(cuid())
+  parcelId        String @unique
+  cropHistory     String // JSON crop history serialized as String
+  soilType        String
+  irrigationSource String
+  productivityScore Float
+  currentCrop     String?
+  pmKisanBeneficiary Boolean @default(false)
+}

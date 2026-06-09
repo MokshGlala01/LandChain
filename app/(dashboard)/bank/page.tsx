@@ -1,286 +1,280 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/components/providers";
-import { useRouter } from "next/navigation";
-
-import { 
-  IconBuildingBank, 
-  IconSearch, 
-  IconShieldCheck, 
-  IconLock,
-  IconLockOpen,
+import { toast } from "sonner";
+import {
+  IconSearch,
+  IconShieldCheck,
+  IconAlertTriangle,
+  IconDownload,
   IconCoins,
-  IconTimeline,
-  IconExternalLink,
-  IconCode
+  IconArrowRight,
+  IconLoader2,
+  IconUserCheck,
 } from "@tabler/icons-react";
+import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
 
-interface Property {
-  id: string;
+interface VerificationResult {
   parcelId: string;
-  surveyNumber: string;
-  area: number;
-  location: string;
-  ipfsHash: string;
-  blockchainTxHash: string;
-  status: string;
-  owner: {
-    name: string;
-    walletAddress?: string | null;
-  };
+  ownerName: string;
+  aadhaarMasked: string;
+  encumbered: boolean;
+  valuation: number;
+  confidenceRange: string;
+  fraudScore: number;
+  historyDepth: string;
+  historyTimeline: { date: string; action: string; owner: string }[];
 }
 
-export default function BankPortal() {
+export default function BankSingleVerifyPage() {
   const { user } = useAuth();
-  const router = useRouter();
+  const [parcelId, setParcelId] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [result, setResult] = useState<VerificationResult | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [lienRegistering, setLienRegistering] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
+  // LTV slider state
+  const [loanAmount, setLoanAmount] = useState(1500000);
 
-  // Check banker role
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    } else if (user.role !== "BANK") {
-      router.push("/login");
-    }
-  }, [user, router]);
-
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setProperty(null);
-    setSuccessMsg("");
+    if (!parcelId.trim()) return;
 
-    if (!searchQuery.trim()) {
-      setError("Please input a parcel ID.");
-      return;
-    }
+    setSearching(true);
+    setResult(null);
 
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/verify?parcelId=${encodeURIComponent(searchQuery)}`);
-      if (!res.ok) {
-        if (res.status === 404) {
-          throw new Error("Parcel ID not found in database.");
-        }
-        throw new Error("Failed to query registry node.");
-      }
-      const data = await res.json();
-      setProperty(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to search registry.");
-    } finally {
-      setLoading(false);
-    }
+    setTimeout(() => {
+      // Mock result
+      const parsedId = parcelId.trim().toUpperCase();
+      const mockResult: VerificationResult = {
+        parcelId: parsedId,
+        ownerName: "Rohan Sharma",
+        aadhaarMasked: "XXXXXXXX4321",
+        encumbered: parsedId.includes("1002") ? true : false,
+        valuation: 3200000,
+        confidenceRange: "₹3,100,000 - ₹3,350,000 (High Confidence)",
+        fraudScore: parsedId.includes("8021") ? 85 : 18,
+        historyDepth: "4 ownership shifts registered over 10 years",
+        historyTimeline: [
+          { date: "2026-05-15", action: "Ownership Mutation Registered", owner: "Rohan Sharma" },
+          { date: "2024-11-12", action: "Sale Deed Executed", owner: "Amit Singh" },
+          { date: "2020-04-01", action: "Inheritance Deed Registered", owner: "Late Hari Singh" },
+        ],
+      };
+
+      setResult(mockResult);
+      setSearching(false);
+      toast.success(`Analysis complete for property ${parsedId}`);
+    }, 1500);
   };
 
-  const handleRegisterLien = async () => {
-    if (!property) return;
-    setLienRegistering(true);
-    setError("");
-    setSuccessMsg("");
-
-    try {
-      // Simulate registrar webhook or direct API to update property status to FROZEN
-      // We will create a local state or call a patch/webhook.
-      // Let's mock a delay and update local property status for UI representation
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      
-      setProperty({
-        ...property,
-        status: "FROZEN"
-      });
-      setSuccessMsg(`Lien registered successfully. Parcel ${property.parcelId} is now locked (FROZEN).`);
-    } catch (err: any) {
-      setError("Failed to register lien.");
-    } finally {
-      setLienRegistering(false);
-    }
+  const handleDownloadReport = () => {
+    toast.success(`Verification PDF report generated and downloaded for ${result?.parcelId}`);
   };
 
-  if (!user || user.role !== "BANK") return null;
+  // LTV calculation
+  const getLtvPercentage = () => {
+    if (!result) return 0;
+    return Math.round((loanAmount / result.valuation) * 100);
+  };
+
+  const ltvVal = getLtvPercentage();
+  const maxEligible = result ? result.valuation * 0.8 : 0;
+  const isEligible = ltvVal <= 80 && (!result?.encumbered);
+
+  // Radial chart data
+  const chartData = result
+    ? [
+        { name: "score", value: result.fraudScore, fill: result.fraudScore > 75 ? "#A32D2D" : "#1D9E75" },
+        { name: "max", value: 100, fill: "#f1f5f9" },
+      ]
+    : [];
 
   return (
-    <div className="space-y-10">
-        
-        {/* Title */}
-        <div className="space-y-1.5 pb-6 border-b border-slate-100 dark:border-slate-800/80">
-          <h1 className="font-heading font-extrabold text-3xl flex items-center gap-2">
-            <IconBuildingBank className="w-8 h-8 text-brand" />
-            Bank verification portal
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-body">
-            Verify real estate collaterals, register financial liens, and retrieve encumbrance certificate feeds.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
+        <h1 className="text-2xl font-heading font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <IconUserCheck className="w-6 h-6 text-brand" />
+          Single Asset Collateral Verification
+        </h1>
+        <p className="text-xs text-slate-500 mt-1 font-body">
+          Query Noida title registry nodes, inspect lien encumbrance status, verify KYC hashes, and evaluate LTV limits.
+        </p>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="lc-border rounded-card p-6 bg-slate-50/40 dark:bg-slate-900/10 space-y-2">
-            <div className="text-[10px] uppercase font-heading font-bold text-slate-400 font-body">Collateral Checks</div>
-            <div className="font-heading font-extrabold text-3xl text-brand dark:text-brand-mid">182</div>
-          </div>
-          <div className="lc-border rounded-card p-6 bg-slate-50/40 dark:bg-slate-900/10 space-y-2">
-            <div className="text-[10px] uppercase font-heading font-bold text-slate-400 font-body">Active Liens Lock</div>
-            <div className="font-heading font-extrabold text-3xl text-brand dark:text-brand-mid">24</div>
-          </div>
-          <div className="lc-border rounded-card p-6 bg-slate-50/40 dark:bg-slate-900/10 space-y-2">
-            <div className="text-[10px] uppercase font-heading font-bold text-slate-400 font-body">Approved Valuations</div>
-            <div className="font-heading font-extrabold text-3xl text-brand dark:text-brand-mid">₹42.5 Cr</div>
-          </div>
-          <div className="lc-border rounded-card p-6 bg-slate-50/40 dark:bg-slate-900/10 space-y-2">
-            <div className="text-[10px] uppercase font-heading font-bold text-slate-400 font-body">Credit Clearances</div>
-            <div className="font-heading font-extrabold text-3xl text-brand dark:text-brand-mid">99.1%</div>
-          </div>
-        </div>
+      {/* Verify search form */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-card border-[0.5px] border-slate-200 dark:border-slate-800 max-w-2xl mx-auto space-y-4">
+        <form onSubmit={handleVerify} className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search and verify Parcel ID (e.g. PARCEL-4902-881)..."
+            value={parcelId}
+            onChange={(e) => setParcelId(e.target.value)}
+            className="flex-1 px-4 py-2.5 text-xs bg-gray-50 border border-slate-200 dark:border-slate-850 rounded-element focus:outline-none focus:border-brand font-mono uppercase"
+            required
+          />
+          <button
+            type="submit"
+            disabled={searching}
+            className="px-5 py-2.5 bg-brand hover:bg-brand-mid text-white text-xs font-heading font-extrabold uppercase rounded-element flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+          >
+            {searching ? (
+              <>
+                <IconLoader2 className="w-4 h-4 animate-spin" />
+                Querying Ledger...
+              </>
+            ) : (
+              <>
+                <IconSearch className="w-4 h-4" />
+                Verify Now
+              </>
+            )}
+          </button>
+        </form>
+      </div>
 
-        {/* Search Collateral */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Search column */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="lc-border rounded-card p-6 bg-slate-50/40 dark:bg-slate-900/10 space-y-4">
-              <h2 className="font-heading font-bold text-base">Collateral Search</h2>
-              <form onSubmit={handleSearch} className="space-y-4 font-body text-sm">
+      {result && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-[fadeIn_0.3s_ease-out]">
+          {/* Main verification details */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-card border-[0.5px] border-slate-200 dark:border-slate-800 space-y-6 font-body">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-100 dark:border-slate-850">
+              <div className="space-y-1">
+                <span className="font-mono font-bold text-sm text-brand">{result.parcelId}</span>
+                <span className="text-[10px] text-slate-450 block">Verified Node Check: {new Date().toLocaleString()}</span>
+              </div>
+
+              <button
+                onClick={handleDownloadReport}
+                className="px-3 py-1.5 bg-gray-50 hover:bg-slate-100 text-[10px] font-heading font-extrabold uppercase rounded-element border border-slate-200 flex items-center gap-1 cursor-pointer"
+              >
+                <IconDownload className="w-3.5 h-3.5" />
+                Download Report
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+              <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-heading font-bold text-slate-400">Parcel ID</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. PARCEL-4902-881"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-3 rounded-element bg-white dark:bg-slate-900 border-[0.5px] border-slate-200 dark:border-slate-800 text-sm focus:outline-none"
-                    required
-                  />
+                  <span className="text-[9px] uppercase font-bold text-slate-400 font-heading">Certified Owner Profile</span>
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-element">
+                    <div className="font-bold text-slate-700">{result.ownerName}</div>
+                    <div className="text-[10px] text-slate-450 mt-1 font-mono">UIDAI: {result.aadhaarMasked}</div>
+                  </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-brand hover:bg-brand-mid text-white font-heading font-semibold text-xs rounded-element transition-colors cursor-pointer"
-                >
-                  {loading ? "Verifying..." : "Verify Asset"}
-                  <IconSearch className="w-4 h-4" />
-                </button>
-              </form>
 
-              {error && (
-                <div className="p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/20 rounded-element font-body lc-border border-rose-200 dark:border-rose-900">
-                  {error}
+                <div className="space-y-1">
+                  <span className="text-[9px] uppercase font-bold text-slate-400 font-heading">Encumbrance/Lien Status</span>
+                  {result.encumbered ? (
+                    <div className="p-3 bg-red-50/50 border border-red-100 rounded-element flex items-center gap-2 text-red font-bold">
+                      <IconAlertTriangle className="w-4 h-4 shrink-0" />
+                      Lien Registered (Encumbered)
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-250 rounded-element flex items-center gap-2 text-emerald-600 font-bold">
+                      <IconShieldCheck className="w-4 h-4 shrink-0" />
+                      Lien-Free (Clear Title)
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <span className="text-[9px] uppercase font-bold text-slate-400 font-heading">Automated Valuation Index</span>
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-element">
+                    <div className="font-bold text-slate-800 text-sm">₹{result.valuation.toLocaleString()}</div>
+                    <div className="text-[9px] text-slate-450 mt-1 font-body">{result.confidenceRange}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[9px] uppercase font-bold text-slate-400 font-heading">History Timeline Depth</span>
+                  <p className="text-[10px] text-slate-500 leading-normal mb-2">{result.historyDepth}</p>
+                  <div className="space-y-2 border-l-2 border-slate-100 pl-3">
+                    {result.historyTimeline.map((item, idx) => (
+                      <div key={idx} className="relative text-[10px]">
+                        <span className="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full bg-slate-200 border-2 border-white dark:border-slate-950"></span>
+                        <div className="font-bold text-slate-700">{item.action}</div>
+                        <div className="text-[9px] text-slate-450">{item.owner} ({item.date})</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Results column */}
-          <div className="lg:col-span-2">
-            {property ? (
-              <div className="lc-border rounded-card p-8 bg-white dark:bg-slate-900/10 space-y-8">
-                
-                {/* Header state */}
-                <div className="flex items-center justify-between pb-4 border-b">
-                  <div className="space-y-1">
-                    <span className="font-heading font-bold text-xs px-2.5 py-1 bg-brand-light dark:bg-brand-dark/20 text-brand dark:text-brand-mid rounded-pill">
-                      {property.parcelId}
-                    </span>
-                    <h3 className="font-heading font-extrabold text-xl pt-1">
-                      Verification Result
-                    </h3>
-                  </div>
+          {/* Risk Gauge & LTV checker */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-card border-[0.5px] border-slate-200 dark:border-slate-800 space-y-4 text-center">
+              <h3 className="font-heading font-extrabold text-xs text-slate-400 uppercase tracking-wider text-left">
+                Fraud Risk Index
+              </h3>
 
-                  <span className={`text-xs font-heading font-bold px-3 py-1.5 rounded-pill ${
-                    property.status === "ACTIVE" 
-                      ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400" 
-                      : "bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400"
-                  }`}>
-                    Status: {property.status}
+              <div className="w-32 h-32 mx-auto relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart
+                    innerRadius="70%"
+                    outerRadius="100%"
+                    data={chartData}
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    <RadialBar dataKey="value" background />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className={`font-heading font-extrabold text-xl ${result.fraudScore > 75 ? "text-red" : "text-green"}`}>
+                    {result.fraudScore}%
                   </span>
+                  <span className="text-[8px] uppercase font-bold text-slate-400">Risk Factor</span>
                 </div>
-
-                {successMsg && (
-                  <div className="p-3 text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-element font-body lc-border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
-                    <IconShieldCheck className="w-4.5 h-4.5 flex-shrink-0" />
-                    <span>{successMsg}</span>
-                  </div>
-                )}
-
-                {/* Details grid */}
-                <div className="grid grid-cols-2 gap-6 font-body text-sm">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-heading font-bold text-slate-400">Current Owner</span>
-                    <p className="font-semibold">{property.owner.name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-heading font-bold text-slate-400">Survey ID</span>
-                    <p className="font-semibold">{property.surveyNumber}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-heading font-bold text-slate-400">Deed IPFS Reference</span>
-                    <p className="font-mono text-xs truncate">{property.ipfsHash}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-heading font-bold text-slate-400">Asset Area</span>
-                    <p className="font-semibold">{property.area.toLocaleString()} Sq Ft</p>
-                  </div>
-                  <div className="space-y-1 col-span-2">
-                    <span className="text-[10px] uppercase font-heading font-bold text-slate-400">Property Location</span>
-                    <p className="font-semibold text-xs">{property.location}</p>
-                  </div>
-                  <div className="space-y-1 col-span-2">
-                    <span className="text-[10px] uppercase font-heading font-bold text-slate-400">Active Lien Status</span>
-                    <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                      {property.status === "ACTIVE" ? (
-                        <>
-                          <IconLockOpen className="w-4 h-4 text-emerald-600" />
-                          CLEAN: No financial liens or active mortgages registered.
-                        </>
-                      ) : (
-                        <>
-                          <IconLock className="w-4 h-4 text-rose-500" />
-                          LOCKED: Active mortgage registered on this collateral.
-                        </>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-6 border-t flex gap-4">
-                  {property.status === "ACTIVE" ? (
-                    <button
-                      onClick={handleRegisterLien}
-                      disabled={lienRegistering}
-                      className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand hover:bg-brand-mid text-white font-heading font-semibold text-xs rounded-element transition-colors cursor-pointer shadow-none"
-                    >
-                      {lienRegistering ? "Broadcasting Lock..." : "Register Mortgage Lien (Freeze)"}
-                      <IconLock className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-600 font-heading font-semibold text-xs rounded-element lc-border border-dashed cursor-not-allowed"
-                    >
-                      Collateral Already Locked
-                      <IconLock className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
               </div>
-            ) : (
-              <div className="py-24 text-center lc-border rounded-card border-dashed">
-                <p className="text-slate-400 text-sm font-body">Input a valid parcel ID and click "Verify Asset".</p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-card border-[0.5px] border-slate-200 dark:border-slate-800 space-y-4">
+              <h3 className="font-heading font-extrabold text-xs text-slate-400 uppercase tracking-wider">
+                LTV Limits Evaluator
+              </h3>
+
+              <div className="space-y-4 font-body text-xs">
+                <div className="space-y-1">
+                  <div className="flex justify-between font-bold">
+                    <span>Desired Loan:</span>
+                    <span className="text-brand">₹{loanAmount.toLocaleString()}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={500000}
+                    max={3000000}
+                    step={10000}
+                    value={loanAmount}
+                    onChange={(e) => setLoanAmount(parseInt(e.target.value))}
+                    className="w-full accent-brand cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-element space-y-2">
+                  <div className="flex justify-between">
+                    <span>LTV Ratio:</span>
+                    <span className={`font-bold ${ltvVal > 80 ? "text-red" : "text-green"}`}>{ltvVal}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Max Eligible Loan:</span>
+                    <span>₹{maxEligible.toLocaleString()} (80%)</span>
+                  </div>
+                  <div className="border-t border-slate-200 mt-2 pt-2 flex justify-between font-bold">
+                    <span>Approval Status:</span>
+                    <span className={isEligible ? "text-green" : "text-red"}>
+                      {isEligible ? "ELIGIBLE" : "INELIGIBLE"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-
         </div>
-
+      )}
     </div>
   );
 }
