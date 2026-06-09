@@ -458,9 +458,9 @@ export default function CitizenDashboard() {
       {/* Simulated Phone Push Notification for OTP */}
       {showSmsBanner && simulatedOtp && (
         <motion.div
-          initial={{ y: -80, opacity: 0, scale: 0.95 }}
-          animate={{ y: 24, opacity: 1, scale: 1 }}
-          exit={{ y: -80, opacity: 0, scale: 0.95 }}
+          initial={{ y: -120, opacity: 0, scale: 0.95 }}
+          animate={{ y: 96, opacity: 1, scale: 1 }}
+          exit={{ y: -120, opacity: 0, scale: 0.95 }}
           className="fixed top-0 left-1/2 -translate-x-1/2 max-w-sm w-[90%] bg-slate-900/95 text-white backdrop-blur-xl border-[0.5px] border-white/10 p-4 rounded-card shadow-2xl z-[9999] flex items-start space-x-3 text-xs"
         >
           <div className="p-2 rounded-element bg-brand flex-shrink-0 text-white shadow-md">

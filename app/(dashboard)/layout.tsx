@@ -356,7 +356,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* 3. Page Content Scroll Area */}
-        <main className="flex-grow p-6 lg:p-10 bg-slate-50 dark:bg-[#030806] z-10 font-body">
+        <main className="flex-grow p-6 lg:p-10 bg-slate-50 dark:bg-[#030806] font-body">
           <div className="max-w-7xl mx-auto w-full">
             {children}
           </div>
