@@ -11,6 +11,7 @@ import AadhaarInput from '@/components/auth/AadhaarInput'
 import OtpWaiting from '@/components/auth/OtpWaiting'
 import OtpEntry from '@/components/auth/OtpEntry'
 import KycReview from '@/components/auth/KycReview'
+import MockSmsNotification from '@/components/auth/MockSmsNotification'
 
 export default function AadhaarRegisterWizard() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function AadhaarRegisterWizard() {
   // Decrypted eKYC demographic data from UIDAI
   const [kycData, setKycData] = useState<any>(null)
   const [mockOtp, setMockOtp] = useState<string | null>(null)
+  const [smsNotifyOtp, setSmsNotifyOtp] = useState<string | null>(null)
 
   // 3-second timer transition for OTP waiting screen in Step 3
   useEffect(() => {
@@ -70,6 +72,12 @@ export default function AadhaarRegisterWizard() {
       setAadhaarHash(data.aadhaarHash)
       setMockOtp(data.mockOtp || null)
       toast.success('OTP sent to your registered mobile number')
+
+      if (data.mockOtp) {
+        setTimeout(() => {
+          setSmsNotifyOtp(data.mockOtp)
+        }, 1500)
+      }
 
       setStep(3)
       setShowOtpInputs(false)
@@ -145,6 +153,9 @@ export default function AadhaarRegisterWizard() {
 
       if (data.mockOtp) {
         setMockOtp(data.mockOtp)
+        setTimeout(() => {
+          setSmsNotifyOtp(data.mockOtp)
+        }, 1500)
       }
       toast.success('A new OTP has been dispatched to your mobile')
 
@@ -307,6 +318,11 @@ export default function AadhaarRegisterWizard() {
           )}
         </AnimatePresence>
       </div>
+      <MockSmsNotification 
+        otp={smsNotifyOtp} 
+        visible={!!smsNotifyOtp} 
+        onClose={() => setSmsNotifyOtp(null)} 
+      />
     </div>
   )
 }

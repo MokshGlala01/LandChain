@@ -10,6 +10,7 @@ import { useAuth } from '@/components/providers'
 import AadhaarInput from '@/components/auth/AadhaarInput'
 import OtpWaiting from '@/components/auth/OtpWaiting'
 import OtpEntry from '@/components/auth/OtpEntry'
+import MockSmsNotification from '@/components/auth/MockSmsNotification'
 
 export default function AadhaarLoginPage() {
   const router = useRouter()
@@ -25,6 +26,7 @@ export default function AadhaarLoginPage() {
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null)
   const [showOtpInputs, setShowOtpInputs] = useState(false)
   const [mockOtp, setMockOtp] = useState<string | null>(null)
+  const [smsNotifyOtp, setSmsNotifyOtp] = useState<string | null>(null)
 
   // 3-second timer transition for OTP waiting screen in Step 2
   useEffect(() => {
@@ -62,6 +64,12 @@ export default function AadhaarLoginPage() {
       setMockOtp(data.mockOtp || null)
 
       toast.success('OTP sent to your registered mobile number')
+
+      if (data.mockOtp) {
+        setTimeout(() => {
+          setSmsNotifyOtp(data.mockOtp)
+        }, 1500)
+      }
 
       setStep(2)
       setShowOtpInputs(false)
@@ -141,6 +149,9 @@ export default function AadhaarLoginPage() {
 
       if (data.mockOtp) {
         setMockOtp(data.mockOtp)
+        setTimeout(() => {
+          setSmsNotifyOtp(data.mockOtp)
+        }, 1500)
       }
       toast.success('A new OTP has been dispatched to your mobile')
 
@@ -234,6 +245,11 @@ export default function AadhaarLoginPage() {
           )}
         </AnimatePresence>
       </div>
+      <MockSmsNotification 
+        otp={smsNotifyOtp} 
+        visible={!!smsNotifyOtp} 
+        onClose={() => setSmsNotifyOtp(null)} 
+      />
     </div>
   )
 }
