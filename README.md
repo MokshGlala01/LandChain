@@ -6,16 +6,42 @@ LandChain is a secure, transparent, and instant real estate mutation and registr
 
 ## 🚀 Key Features
 
-1. **Aadhaar OTP KYC Gateway (Mock)**:
-   Matches unique resident identity databases to secure citizen and officer credentials.
-2. **Citizen Registration Wizard**:
-   A 4-step workflow: KYC verification -> Property specs -> Dropzone computing client-side SHA-256 deed hashes and IPFS CIDs -> Map boundary drawer.
-3. **Govt Registrar approvals Queue**:
-   An queue panel where registrars review deeds, authorize title mutations on-chain via MetaMask signers, check Twilio SMS alerts, and inspect overlaps.
-4. **Banker Valuations Portal**:
-   A verification portal where bankers search land parcels, inspect lien structures, and register financial mortgages (freezing asset transactions).
-5. **Dynamic QR Verification**:
-   Cryptographic certificate generator showing ledger block timestamps and deed hashes.
+LandChain includes 6 fully functional role-based dashboards protected by role-based routing:
+
+1. **Citizen Dashboard (`/citizen`)**:
+   - **Overview & Mutations**: Track owned properties and mutation histories.
+   - **Deed & Document Center**: Digital locker integration, IPFS hash indexing, and QR-coded document generator (Khata/EC).
+   - **Title Transfers**: Stepper workflow to pay stamp duty via simulated payment gateways and request transfers.
+   - **Encrypted Wills**: Nominee nominee split registry with OTP authentication.
+   - **Alerts Watchlist**: Real-time parcel activity notifications (SMS/Email/WhatsApp).
+   - **Carbon Credits Portal**: Sell green credits verified via satellite green-cover index values.
+
+2. **Government Registrar Dashboard (`/registrar`)**:
+   - **Approvals Pipeline**: Review pending mutations, inspect overlap bounds, and execute smart contract ledger writes.
+   - **Arbitration Center**: Resolve disputed deeds and freeze/unfreeze asset accounts on-chain.
+   - **Fraud Alert Console**: Inspect transaction velocity spikes and valuation leaps flagged by the AI engine.
+   - **Inheritance Executors**: Disburse nominee claims matching encrypted wills.
+
+3. **Banker Mortgage Portal (`/bank`)**:
+   - **Lien Audit**: Perform instant single or batch CSV property queries using PapaParse.
+   - **LTV Eligibility Calculator**: Set collateral terms, calculate stamp duties, and register on-chain mortgages.
+   - **Webhook Integrations**: Subscribe external core banking channels to mutation webhooks.
+
+4. **Admin Analytics Center (`/admin`)**:
+   - **Analytics Suite**: Aggregate mutation durations, revenue collections, and transaction volumes using Recharts.
+   - **GIS Heatmap**: Mapbox GL canvas visualization showing transaction volumes, encumbrances, and idle lands.
+   - **Developer Access**: Generate rate-limited Swagger/OpenAPI credentials.
+   - **System Configs**: Adjust district-level circle rates and system cron schedules.
+
+5. **Builder Development Portal (`/builder`)**:
+   - **RERA Compliance**: Register developments, auto-generate unit indices, and monitor construction milestone timelines.
+   - **Title Escrows**: Upload architectural NOC proofs to release escrow funds and mint ERC-721 Property NFT proofs.
+
+6. **Agricultural Officer Dashboard (`/agri`)**:
+   - **Agri Registry**: Track soil type, irrigation logs, PM-Kisan welfare, and yield histories.
+   - **Zoning Conversion (Section 143)**: Progress agricultural lands through Tehsildar -> Collector -> Revenue board pipelines.
+   - **Land Pooling Belts**: Click-select adjacent parcel layouts on interactive SVG maps to coordinate infrastructure projects.
+   - **Canopy Carbon Credits**: Audit spectral NDVI indices to issue or revoke on-chain carbon offset credits.
 
 ---
 
@@ -115,8 +141,10 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## 🧪 Testing the User Flow
-- **Authentication**: Log in as a resident (`Citizen` / `Registrar` / `Banker`) using Aadhaar OTP simulation (Code: `123456`).
-- **Register Property**: Go to the Citizen dashboard, open the registration form, fill details, drop a deed PDF, and click to draw boundary points on the map. Authorize with MetaMask.
-- **Transfer Title**: Click "Initiate Transfer" from the Citizen dashboard, input a buyer's Aadhaar and the stamp duty amount.
-- **Registrar Approval**: Log in as the Registrar to authorize the pending mutation deed on-chain.
-- **Lien Check**: Log in as the Banker, search the parcel ID, and click "Register Lien" to freeze the property from mutations.
+- **Authentication**: Log in with any role (`Citizen`, `Registrar`, `Bank`, `Admin`, `Builder`, `Agri`) using Aadhaar OTP simulation (Code: `123456` standard).
+- **Citizen Mutation**: Go to the Citizen panel, generate dynamic Khata deeds, pay stamp duties, structure nominees, or list carbon credits.
+- **Registrar Approval**: Log in as the Registrar to authorize mutated deeds, assign arbitrators to dispute holds, or monitor suspect fraud flags.
+- **Bank Mortgages**: Log in as a Banker to verify LTV sliders, upload bulk CSV properties, or subscribe webhooks.
+- **Admin GIS Heatmap**: Log in as an Admin to check Recharts metrics, inspect the Mapbox GL Heatmap, or sync blockchain health.
+- **Builder Escrows**: Log in as a Builder to verify milestones, request payment releases, or mint flat Property NFTs.
+- **Agricultural Audits**: Log in as an Agri Officer to update soil/irrigation metrics, run land pooling SVG layouts, or trigger satellite NDVI scans.
