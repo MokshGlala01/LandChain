@@ -1,4 +1,4 @@
-import { sendOtp } from './lib/sms.ts'
+import { sendOtp } from './lib/sms'
 
 async function run() {
   console.log('Testing sendOtp via SMS module...')
