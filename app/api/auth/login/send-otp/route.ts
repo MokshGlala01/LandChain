@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      ...(process.env.NODE_ENV !== 'production' && result.isMock && { isMock: true })
+      ...(process.env.NODE_ENV !== 'production' && {
+        isMock: result.isMock,
+        debug: { otp: result.otp }
+      })
     })
   } catch (error: any) {
     console.error('Login send-otp error:', error)

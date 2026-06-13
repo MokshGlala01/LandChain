@@ -73,7 +73,11 @@ export default function MobileOTPLoginPage() {
         throw new Error(data.message || 'Failed to send OTP.')
       }
 
-      toast.success('Verification code dispatched to your phone')
+      if (data.isMock && data.debug?.otp) {
+        toast.info(`[Testing SIM] Mobile OTP: ${data.debug.otp}`)
+      } else {
+        toast.success('Verification code dispatched to your phone')
+      }
       setStep(2)
       setShowOtpInputs(false)
       setAttemptsLeft(5)
@@ -149,7 +153,11 @@ export default function MobileOTPLoginPage() {
       }
 
       setResendAttempts((prev) => prev + 1)
-      toast.success('A new OTP has been dispatched to your mobile')
+      if (data.isMock && data.debug?.otp) {
+        toast.info(`[Testing SIM] Mobile OTP: ${data.debug.otp}`)
+      } else {
+        toast.success('A new OTP has been dispatched to your mobile')
+      }
       setShowOtpInputs(false)
     } catch (err: any) {
       setError(err.message)

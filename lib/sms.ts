@@ -1,5 +1,11 @@
 import { cacheSet, cacheGet } from "@/lib/auth-cache";
 
+const cleanEnvVar = (val: string | undefined) => {
+  if (!val) return null;
+  const cleaned = val.replace(/['"]/g, "").trim();
+  return cleaned === "" ? null : cleaned;
+};
+
 export function normalizePhoneNumber(phone: string): string {
   const clean = phone.replace(/[^\d+]/g, ""); // Keep only digits and plus sign
   if (clean.startsWith("+")) {
@@ -13,9 +19,9 @@ export function normalizePhoneNumber(phone: string): string {
 }
 
 export async function sendTwilioSms(to: string, body: string): Promise<boolean> {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_PHONE_NUMBER;
+  const accountSid = cleanEnvVar(process.env.TWILIO_ACCOUNT_SID);
+  const authToken = cleanEnvVar(process.env.TWILIO_AUTH_TOKEN);
+  const from = cleanEnvVar(process.env.TWILIO_PHONE_NUMBER);
 
   if (!accountSid || !authToken || !from) {
     console.log("[SMS Bypass] Twilio env variables are not fully configured. Falling back to simulation mode.");
@@ -57,11 +63,12 @@ export async function sendTwilioSms(to: string, body: string): Promise<boolean> 
   }
 }
 
-export async function sendOtp(mobile: string): Promise<{ success: boolean; isMock?: boolean }> {
+export async function sendOtp(mobile: string): Promise<{ success: boolean; isMock?: boolean; otp?: string }> {
   // 1. Try Twilio Verify API
-  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const verifyServiceSid = cleanEnvVar(process.env.TWILIO_VERIFY_SERVICE_SID);
+  const accountSid = cleanEnvVar(process.env.TWILIO_ACCOUNT_SID);
+  const authToken = cleanEnvVar(process.env.TWILIO_AUTH_TOKEN);
+  const twilioFrom = cleanEnvVar(process.env.TWILIO_PHONE_NUMBER);
 
   if (verifyServiceSid && accountSid && authToken) {
     try {
@@ -88,11 +95,27 @@ export async function sendOtp(mobile: string): Promise<{ success: boolean; isMoc
     } catch (e) {
       console.error("[Twilio Verify Exception]:", e);
     }
+  } else if (accountSid && authToken && twilioFrom) {
+    // 2. Fallback to standard Twilio SMS (non-Verify service)
+    try {
+      const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      const body = `LandChain Verification: Your secure OTP code is ${mockOtp}. Valid for 10 minutes.`;
+      const sent = await sendTwilioSms(mobile, body);
+      if (sent) {
+        await cacheSet(`sms_otp:${mobile}`, mockOtp, 600); // 10 mins expiry
+        console.log(`[Twilio Standard SMS] OTP code ${mockOtp} sent to mobile number +91${mobile}`);
+        return { success: true, isMock: false, otp: mockOtp };
+      } else {
+        console.error("[Twilio Standard SMS Send Failed]: sendTwilioSms returned false");
+      }
+    } catch (e) {
+      console.error("[Twilio Standard SMS Exception]:", e);
+    }
   }
 
-  // 2. Try MSG91 OTP API
-  const msg91AuthKey = process.env.MSG91_AUTH_KEY;
-  const msg91TemplateId = process.env.MSG91_TEMPLATE_ID;
+  // 3. Try MSG91 OTP API
+  const msg91AuthKey = cleanEnvVar(process.env.MSG91_AUTH_KEY);
+  const msg91TemplateId = cleanEnvVar(process.env.MSG91_TEMPLATE_ID);
 
   if (msg91AuthKey && msg91TemplateId) {
     try {
@@ -113,18 +136,18 @@ export async function sendOtp(mobile: string): Promise<{ success: boolean; isMoc
     }
   }
 
-  // 3. Fallback to SMS Simulator mode (log to terminal and cache)
+  // 4. Fallback to SMS Simulator mode (log to terminal and cache)
   const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
   await cacheSet(`sms_otp:${mobile}`, mockOtp, 600); // 10 minutes expiry
   console.log(`[SMS SIMULATOR] Dispatched OTP code ${mockOtp} to mobile number +91${mobile}`);
-  return { success: true, isMock: true };
+  return { success: true, isMock: true, otp: mockOtp };
 }
 
 export async function checkOtp(mobile: string, otp: string): Promise<{ success: boolean }> {
   // 1. Try Twilio Verify API
-  const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const verifyServiceSid = cleanEnvVar(process.env.TWILIO_VERIFY_SERVICE_SID);
+  const accountSid = cleanEnvVar(process.env.TWILIO_ACCOUNT_SID);
+  const authToken = cleanEnvVar(process.env.TWILIO_AUTH_TOKEN);
 
   if (verifyServiceSid && accountSid && authToken) {
     try {
@@ -154,7 +177,7 @@ export async function checkOtp(mobile: string, otp: string): Promise<{ success: 
   }
 
   // 2. Try MSG91 OTP API
-  const msg91AuthKey = process.env.MSG91_AUTH_KEY;
+  const msg91AuthKey = cleanEnvVar(process.env.MSG91_AUTH_KEY);
 
   if (msg91AuthKey) {
     try {
@@ -175,7 +198,7 @@ export async function checkOtp(mobile: string, otp: string): Promise<{ success: 
     }
   }
 
-  // 3. Fallback to SMS Simulator cache check
+  // 3. Fallback to SMS Simulator cache check (which standard Twilio SMS fallback also uses)
   const expected = await cacheGet(`sms_otp:${mobile}`);
   if (expected && expected === otp) {
     return { success: true };
