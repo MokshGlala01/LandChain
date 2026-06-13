@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { signJwt, SESSION_COOKIE_NAME } from '@/lib/auth-session'
+import { signJwt, SESSION_COOKIE_NAME, hashMobile } from '@/lib/auth-session'
+import { hashAadhaar } from '@/lib/uidai'
 import fs from 'fs'
 import path from 'path'
 
@@ -18,20 +19,24 @@ const ROLE_MAP: Record<string, string> = {
 }
 
 /**
- * GET - Login for returning users by Aadhaar hash
+ * GET - Login for returning users by Aadhaar hash, mobile, or userId
  */
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams
     const aadhaarHash = searchParams.get('aadhaarHash')
+    const userId = searchParams.get('userId')
+    const mobile = searchParams.get('mobile')
 
-    if (!aadhaarHash) {
-      return NextResponse.json({ error: 'Missing Aadhaar hash parameter' }, { status: 400 })
+    let user = null
+    if (userId) {
+      user = await prisma.user.findUnique({ where: { id: userId } })
+    } else if (mobile) {
+      const mobileHash = hashMobile(mobile)
+      user = await prisma.user.findUnique({ where: { mobileHash } })
+    } else if (aadhaarHash) {
+      user = await prisma.user.findUnique({ where: { aadhaarHash } })
     }
-
-    const user = await prisma.user.findUnique({
-      where: { aadhaarHash }
-    })
 
     if (!user) {
       return NextResponse.json({ error: 'USER_NOT_FOUND' }, { status: 404 })
@@ -47,7 +52,13 @@ export async function GET(req: NextRequest) {
       name: user.name
     }, '7d')
 
-    const response = NextResponse.json({ success: true, role: user.role })
+    const response = NextResponse.json({
+      success: true,
+      role: user.role,
+      name: user.name,
+      kycStatus: user.kycStatus,
+      aadhaarHash: user.aadhaarHash
+    })
     
     response.headers.set(
       'Set-Cookie',
@@ -58,7 +69,7 @@ export async function GET(req: NextRequest) {
       data: {
         action: 'LOGIN_SUCCESS',
         actorId: user.id,
-        metadata: JSON.stringify({ method: 'UIDAI_OTP' })
+        metadata: JSON.stringify({ method: 'SESSION_SYNC' })
       }
     })
 
@@ -76,16 +87,23 @@ export async function POST(req: NextRequest) {
   try {
     const {
       aadhaarHash,
+      aadhaarNumber,
+      mobile,
       name,
       dob,
       gender,
       role,
       address,
       careOf,
-      photo
+      photo,
+      aadhaarDocIpfsHash
     } = await req.json()
 
-    if (!aadhaarHash || !name) {
+    // Retrieve or calculate hashes
+    const computedAadhaarHash = aadhaarHash || (aadhaarNumber ? hashAadhaar(aadhaarNumber) : `mock_aadhaar_${Date.now()}`)
+    const computedMobileHash = mobile ? hashMobile(mobile) : null
+
+    if (!name) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
 
@@ -93,11 +111,16 @@ export async function POST(req: NextRequest) {
     const dbRole = ROLE_MAP[role?.toLowerCase()] || 'CITIZEN'
 
     // Check if user already exists
-    let user = await prisma.user.findUnique({
-      where: { aadhaarHash }
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { aadhaarHash: computedAadhaarHash },
+          ...(computedMobileHash ? [{ mobileHash: computedMobileHash }] : [])
+        ]
+      }
     })
 
-    if (user) {
+    if (existing) {
       return NextResponse.json({ error: 'ACCOUNT_EXISTS' }, { status: 409 })
     }
 
@@ -109,8 +132,9 @@ export async function POST(req: NextRequest) {
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true })
         }
-        const buffer = Buffer.from(photo, 'base64')
-        const fileName = `${aadhaarHash}.jpg`
+        const cleanBase64 = photo.includes('base64,') ? photo.split('base64,')[1] : photo
+        const buffer = Buffer.from(cleanBase64, 'base64')
+        const fileName = `${computedAadhaarHash}.jpg`
         const filePath = path.join(uploadDir, fileName)
         fs.writeFileSync(filePath, buffer)
         photoUrl = `/uploads/users/${fileName}`
@@ -120,10 +144,12 @@ export async function POST(req: NextRequest) {
     }
 
     const isCitizen = dbRole === 'CITIZEN'
-    user = await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
-        aadhaarHash,
+        aadhaarHash: computedAadhaarHash,
+        mobileHash: computedMobileHash,
         name,
+        phone: mobile ? `+91 ${mobile.substring(0, 5)} ${mobile.substring(5)}` : null,
         dob: dob ? new Date(dob) : new Date("1990-01-01"),
         gender: gender || "Male",
         role: dbRole,
@@ -131,8 +157,10 @@ export async function POST(req: NextRequest) {
         address: address || "Not Provided",
         careOf: careOf || null,
         photoUrl: photoUrl || null,
-        kycVerifiedAt: new Date(),
-        kycMethod: 'UIDAI_OTP'
+        aadhaarDocIpfsHash: aadhaarDocIpfsHash || null,
+        kycStatus: 'PENDING_MANUAL_REVIEW',
+        kycMethod: 'MANUAL_UPLOAD',
+        kycVerifiedAt: null
       }
     })
 
@@ -146,7 +174,13 @@ export async function POST(req: NextRequest) {
       name: user.name
     }, '7d')
 
-    const response = NextResponse.json({ success: true, role: user.role })
+    const response = NextResponse.json({
+      success: true,
+      role: user.role,
+      kycStatus: user.kycStatus,
+      aadhaarHash: user.aadhaarHash
+    })
+
     response.headers.set(
       'Set-Cookie',
       `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`
@@ -156,7 +190,7 @@ export async function POST(req: NextRequest) {
       data: {
         action: 'USER_REGISTERED',
         actorId: user.id,
-        metadata: JSON.stringify({ method: 'UIDAI_OTP' })
+        metadata: JSON.stringify({ method: 'SMS_OTP_MANUAL_UPLOAD' })
       }
     })
 

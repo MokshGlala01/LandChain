@@ -21,6 +21,8 @@ import {
   IconGlobe,
   IconLoader2,
   IconCoins,
+  IconLock,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 
 import MetricCard from "@/components/dashboard/MetricCard";
@@ -326,15 +328,47 @@ export default function CitizenDashboard() {
         title="Citizen Assets Portal"
         subtitle="Log properties, track active mutations, and query decentralized title registries."
         cta={
-          <button
-            onClick={() => setFormOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-brand hover:bg-brand-mid text-white text-xs font-heading font-extrabold uppercase rounded-element transition-colors cursor-pointer"
-          >
-            <IconPlus className="w-4 h-4" />
-            Register Property
-          </button>
+          user && user.kycStatus === 'VERIFIED' ? (
+            <button
+              onClick={() => setFormOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-brand hover:bg-brand-mid text-white text-xs font-heading font-extrabold uppercase rounded-element transition-colors cursor-pointer"
+            >
+              <IconPlus className="w-4 h-4" />
+              Register Property
+            </button>
+          ) : (
+            <button
+              disabled
+              title="Complete Aadhaar KYC to unlock property registration"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-650 text-xs font-heading font-extrabold uppercase rounded-element cursor-not-allowed"
+            >
+              <IconLock className="w-4 h-4" />
+              Register Property
+            </button>
+          )
         }
       />
+
+      {/* Limited Mode Banner for Pending KYC */}
+      {user && user.kycStatus !== 'VERIFIED' && (
+        <div className={`p-4 rounded-card border ${
+          user.kycStatus === 'REJECTED' 
+            ? 'bg-red-50/50 border-red-200 dark:bg-red-950/10 dark:border-red-900/30 text-red-800 dark:text-red-400' 
+            : 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/10 dark:border-amber-900/30 text-amber-800 dark:text-amber-400'
+        } flex items-start space-x-3 text-xs font-medium mt-4`}>
+          <IconAlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-500 dark:text-amber-400" />
+          <div className="space-y-1 text-left">
+            <h4 className="font-extrabold text-sm">
+              {user.kycStatus === 'REJECTED' ? 'Identity Verification Rejected' : 'Identity Verification Pending'}
+            </h4>
+            <p className="opacity-90 leading-relaxed">
+              {user.kycStatus === 'REJECTED' 
+                ? 'Your uploaded Aadhaar card document was rejected. Please contact the Land Registry or register again with correct details.' 
+                : 'Your account is pending verification. You can browse properties and view your dashboard, but property transfers and document generation are locked until our team verifies your Aadhaar (usually within 24 hours).'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Simulated OTP Notification Banner */}
       {showSmsBanner && simulatedOtp && (

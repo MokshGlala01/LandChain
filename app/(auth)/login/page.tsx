@@ -6,35 +6,34 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useAuth } from '@/components/providers'
-import { IconAlertTriangle, IconLock, IconArrowRight } from '@tabler/icons-react'
-import AadhaarInput from '@/components/auth/AadhaarInput'
+import { IconAlertTriangle, IconDeviceMobile, IconLock, IconArrowRight } from '@tabler/icons-react'
 import OtpWaiting from '@/components/auth/OtpWaiting'
 import OtpEntry from '@/components/auth/OtpEntry'
-import ConsentCheckbox from '@/components/auth/ConsentCheckbox'
 
-export default function AadhaarOTPLoginPage() {
+export default function MobileOTPLoginPage() {
   const router = useRouter()
   const { login } = useAuth()
 
-  // Wizard state: 1 = Aadhaar Entry, 2 = OTP Waiting/Entry, 3 = Pending Approval
+  // Wizard state: 1 = Mobile Entry, 2 = OTP Waiting/Entry, 3 = Pending Approval
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showRegisterLink, setShowRegisterLink] = useState(false)
 
   // Step 1 States
-  const [rawValue, setRawValue] = useState('')
-  const [useVid, setUseVid] = useState(false)
-  const [isValidAadhaar, setIsValidAadhaar] = useState<boolean | null>(null)
-  const [consentChecked, setConsentChecked] = useState(false)
+  const [mobile, setMobile] = useState('')
+  const [isValidMobile, setIsValidMobile] = useState(false)
 
   // Step 2 States
-  const [txnId, setTxnId] = useState('')
-  const [aadhaarHash, setAadhaarHash] = useState('')
   const [showOtpInputs, setShowOtpInputs] = useState(false)
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null)
   const [resendAttempts, setResendAttempts] = useState(0)
   const [debugInfo, setDebugInfo] = useState<any>(null)
+
+  // Validate mobile number format on change
+  useEffect(() => {
+    setIsValidMobile(/^[6-9]\d{9}$/.test(mobile))
+  }, [mobile])
 
   // 3-second timer transition for OTP waiting screen in Step 2
   useEffect(() => {
@@ -47,20 +46,18 @@ export default function AadhaarOTPLoginPage() {
   }, [step, showOtpInputs])
 
   // Step 1 Submission
-  const handleAadhaarSubmit = async () => {
-    if (!isValidAadhaar || !consentChecked || loading) return
+  const handleMobileSubmit = async () => {
+    if (!isValidMobile || loading) return
 
     setLoading(true)
     setError(null)
     setShowRegisterLink(false)
-    const newTxnId = crypto.randomUUID()
-    setTxnId(newTxnId)
 
     try {
-      const res = await fetch('/api/auth/login/initiate', {
+      const res = await fetch('/api/auth/login/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaar: rawValue, txnId: newTxnId })
+        body: JSON.stringify({ mobile })
       })
 
       const data = await res.json()
@@ -69,32 +66,20 @@ export default function AadhaarOTPLoginPage() {
       }
 
       if (!res.ok) {
-        if (data.error === 'ACCOUNT_NOT_FOUND' || data.code === 'ACCOUNT_NOT_FOUND') {
+        if (data.error === 'ACCOUNT_NOT_FOUND') {
           setShowRegisterLink(true)
-          throw new Error('No account is associated with this Aadhaar. Please register first.')
+          throw new Error('No account is associated with this mobile number. Please register first.')
         }
-        if (data.code === '940' || data.error === '940') {
-          // Special full screen blocking state (No mobile linked)
-          setStep(2)
-          setShowOtpInputs(false)
-          setAttemptsLeft(0)
-          setError('940')
-          return
-        }
-        throw new Error(data.error || 'Aadhaar login initiation failed.')
+        throw new Error(data.message || 'Failed to send OTP.')
       }
 
-      setAadhaarHash(data.aadhaarHash)
-      
-
-
-      toast.success('OTP sent to registered mobile number')
+      toast.success('Verification code dispatched to your phone')
       setStep(2)
       setShowOtpInputs(false)
-      setAttemptsLeft(3)
+      setAttemptsLeft(5)
     } catch (err: any) {
-      setError(err.message || 'Unable to verify Aadhaar. Please try again.')
-      toast.error(err.message || 'Verification failed')
+      setError(err.message || 'Unable to initiate login. Please try again.')
+      toast.error(err.message || 'Initialization failed')
     } finally {
       setLoading(false)
     }
@@ -108,42 +93,31 @@ export default function AadhaarOTPLoginPage() {
     setError(null)
 
     try {
-      const res = await fetch('/api/auth/login/verify', {
+      const res = await fetch('/api/auth/login/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txnId, otp })
+        body: JSON.stringify({ mobile, otp })
       })
 
       const data = await res.json()
+      if (data.debug) {
+        setDebugInfo(data.debug)
+      }
 
       if (!res.ok) {
-        if (data.attemptsLeft !== undefined) {
-          setAttemptsLeft(data.attemptsLeft)
-        }
-        throw new Error(data.message || data.error || 'Incorrect OTP.')
+        setAttemptsLeft((prev) => (prev !== null ? prev - 1 : 4))
+        throw new Error(data.message || 'Incorrect OTP.')
       }
 
-      // Set the returned hash
-      const verifiedHash = data.aadhaarHash
-      setAadhaarHash(verifiedHash)
-
-      // Initialize session cookie
-      const sessionRes = await fetch(`/api/auth/session?aadhaarHash=${encodeURIComponent(verifiedHash)}`)
-      const sessionData = await sessionRes.json()
-
-      if (!sessionRes.ok) {
-        throw new Error(sessionData.error || 'Failed to initialize session')
-      }
-
-      if (sessionData.pendingApproval) {
+      if (data.pendingApproval) {
         setStep(3)
         return
       }
 
       // Log in on context provider
-      await login(verifiedHash, sessionData.role, sessionData.name)
-      toast.success('Login successful!')
-      router.push(`/${sessionData.role.toLowerCase()}`)
+      await login(data.aadhaarHash, data.role, data.name, data.kycStatus)
+      toast.success('Sign in successful!')
+      router.push(`/${data.role.toLowerCase()}`)
     } catch (err: any) {
       setError(err.message)
       toast.error(err.message)
@@ -158,12 +132,11 @@ export default function AadhaarOTPLoginPage() {
     setLoading(true)
     setError(null)
 
-
     try {
-      const res = await fetch('/api/auth/login/initiate', {
+      const res = await fetch('/api/auth/login/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaar: rawValue, txnId })
+        body: JSON.stringify({ mobile })
       })
 
       const data = await res.json()
@@ -172,10 +145,8 @@ export default function AadhaarOTPLoginPage() {
       }
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to resend OTP')
+        throw new Error(data.message || 'Failed to resend OTP')
       }
-
-
 
       setResendAttempts((prev) => prev + 1)
       toast.success('A new OTP has been dispatched to your mobile')
@@ -190,11 +161,7 @@ export default function AadhaarOTPLoginPage() {
 
   const handleStartOver = () => {
     setStep(1)
-    setRawValue('')
-    setIsValidAadhaar(null)
-    setConsentChecked(false)
-    setTxnId('')
-    setAadhaarHash('')
+    setMobile('')
     setShowOtpInputs(false)
     setAttemptsLeft(null)
     setResendAttempts(0)
@@ -207,44 +174,6 @@ export default function AadhaarOTPLoginPage() {
     enter: { x: 50, opacity: 0 },
     center: { x: 0, opacity: 1 },
     exit: { x: -50, opacity: 0 }
-  }
-
-  if (error === '940') {
-    return (
-      <div className="flex flex-col items-center text-center space-y-6 py-4">
-        <div className="p-3 bg-amber-50 dark:bg-amber-950/20 text-amber-500 rounded-full border border-amber-200 dark:border-amber-900/30">
-          <IconAlertTriangle className="w-12 h-12" />
-        </div>
-        <div className="space-y-3 max-w-[340px]">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">OTP could not be sent</h3>
-          <p className="text-sm text-slate-500 leading-relaxed">
-            Your Aadhaar number does not have a mobile number registered 
-            with UIDAI, so an OTP cannot be sent.
-          </p>
-          <p className="text-xs text-slate-400">
-            Please visit your nearest Aadhaar Seva Kendra to link a mobile 
-            number to your Aadhaar, then try again.
-          </p>
-        </div>
-        <div className="w-full pt-4 space-y-3">
-          <a
-            href="https://uidai.gov.in/locate-center"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold flex justify-center items-center gap-2 shadow-lg transition-all text-center"
-          >
-            Find nearest center &rarr;
-          </a>
-          <button
-            type="button"
-            onClick={handleStartOver}
-            className="w-full py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all font-semibold"
-          >
-            Start Over
-          </button>
-        </div>
-      </div>
-    )
   }
 
   if (step === 3) {
@@ -285,7 +214,7 @@ export default function AadhaarOTPLoginPage() {
       </div>
 
       {/* Main Form Error alerts */}
-      {error && error !== '940' && (
+      {error && (
         <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 text-xs font-semibold rounded-xl flex flex-col space-y-2 border border-red-100 dark:border-red-900/30">
           <div className="flex items-center space-x-2">
             <IconAlertTriangle className="w-4 h-4 shrink-0" />
@@ -319,39 +248,41 @@ export default function AadhaarOTPLoginPage() {
               {/* Header */}
               <div className="flex flex-col items-center text-center space-y-2">
                 <img src="/logo.png" alt="LandChain Logo" className="w-12 h-12 object-contain" />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Sign in with Aadhaar</h2>
-                <p className="text-xs text-slate-500">Secure OTP-based login via UIDAI</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Sign in to LandChain</h2>
+                <p className="text-xs text-slate-500">Secure OTP-based login via SMS</p>
               </div>
 
-              {/* Aadhaar Input */}
-              <AadhaarInput
-                rawValue={rawValue}
-                onChange={setRawValue}
-                useVid={useVid}
-                setUseVid={setUseVid}
-                isValid={isValidAadhaar}
-                setIsValid={setIsValidAadhaar}
-              />
-
-              {/* Consent Checkbox */}
-              <ConsentCheckbox
-                checked={consentChecked}
-                onChange={setConsentChecked}
-                label={
-                  <span>
-                    I consent to verify my identity via UIDAI using my Aadhaar number for logging into LandChain.
-                  </span>
-                }
-              />
+              {/* Mobile Input */}
+              <div className="flex flex-col space-y-2">
+                <label htmlFor="mobile-input" className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Mobile Number
+                </label>
+                <div className="relative flex items-center">
+                  <div className="absolute left-4 text-sm font-semibold text-slate-500 border-r border-slate-200 dark:border-slate-800 pr-3 mr-2">
+                    +91
+                  </div>
+                  <input
+                    id="mobile-input"
+                    type="tel"
+                    placeholder="Enter 10-digit number"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="w-full pl-16 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 rounded-xl text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                  />
+                  <div className="absolute right-4 text-slate-400">
+                    <IconDeviceMobile className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
 
               {/* Action Button */}
               <button
                 type="button"
                 id="send-otp-btn"
-                onClick={handleAadhaarSubmit}
-                disabled={!isValidAadhaar || !consentChecked || loading}
+                onClick={handleMobileSubmit}
+                disabled={!isValidMobile || loading}
                 className={`w-full py-3 px-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${
-                  isValidAadhaar && consentChecked && !loading
+                  isValidMobile && !loading
                     ? 'bg-[#0F6E56] hover:bg-[#085041] text-white shadow-lg active:scale-[0.98]'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                 }`}
@@ -362,7 +293,7 @@ export default function AadhaarOTPLoginPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    <span>Contacting UIDAI...</span>
+                    <span>Contacting SMS Gateway...</span>
                   </>
                 ) : (
                   <span>Send OTP</span>
@@ -407,11 +338,10 @@ export default function AadhaarOTPLoginPage() {
 
       {process.env.NODE_ENV === 'development' && debugInfo && (
         <div className="debug-panel border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50 dark:bg-slate-950 text-[10px] text-slate-500 font-mono space-y-1 mt-4">
-          <strong className="text-slate-700 dark:text-slate-300">Debug — UIDAI Response:</strong>
+          <strong className="text-slate-700 dark:text-slate-300">Debug — SMS Response:</strong>
           <pre className="overflow-x-auto whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
         </div>
       )}
-
     </div>
   )
 }

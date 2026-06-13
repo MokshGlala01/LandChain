@@ -32,6 +32,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // Verify KYC status of owner
+    const fromOwner = await prisma.user.findUnique({
+      where: { id: fromOwnerId }
+    });
+    if (!fromOwner || fromOwner.kycStatus !== 'VERIFIED') {
+      return NextResponse.json(
+        { error: "Forbidden: Owner KYC must be fully verified before performing property transfers." },
+        { status: 403 }
+      );
+    }
+
     // Format target Aadhaar to mock hash
     const formattedAadhaar = toOwnerAadhaar.replace(/\s/g, "");
     const toAadhaarHash = "aadhaar_" + formattedAadhaar;

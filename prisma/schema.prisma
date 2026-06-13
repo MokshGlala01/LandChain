@@ -22,8 +22,11 @@ model User {
   careOf        String?
   photoUrl      String?
   language      String?    @default("en")
-  kycVerifiedAt DateTime   @default(now())
-  kycMethod     String     @default("UIDAI_OTP")
+  mobileHash          String?    @unique
+  aadhaarDocIpfsHash  String?
+  kycStatus           String     @default("PENDING_MANUAL_REVIEW")
+  kycVerifiedAt       DateTime?
+  kycMethod           String     @default("MANUAL_UPLOAD")
   properties    Property[]
   createdAt     DateTime   @default(now())
 }

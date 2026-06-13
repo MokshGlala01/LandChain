@@ -29,6 +29,8 @@ export async function GET(req: Request) {
         name: user.name,
         role: user.role,
         phone: user.phone,
+        kycStatus: user.kycStatus,
+        aadhaarHash: user.aadhaarHash
       });
     }
 

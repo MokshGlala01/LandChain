@@ -58,6 +58,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     ],
     REGISTRAR: [
       { label: "Approvals Queue", href: "/registrar", icon: IconGavel },
+      { label: "KYC Review", href: "/registrar/kyc-review", icon: IconUserCheck },
       { label: "Disputes", href: "/registrar/disputes", icon: IconScale },
       { label: "Fraud Alerts", href: "/registrar/fraud", icon: IconShield },
       { label: "Audit Log", href: "/registrar/audit", icon: IconHistory },

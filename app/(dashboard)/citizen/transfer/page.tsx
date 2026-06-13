@@ -10,6 +10,7 @@ import {
   IconArrowRight,
   IconLoader2,
   IconArrowsLeftRight,
+  IconLock,
 } from "@tabler/icons-react";
 
 interface UserProperty {
@@ -211,7 +212,18 @@ export default function CitizenTransferPage() {
             Initiate Title Transfer
           </h3>
 
-          <form onSubmit={handleInitiateTransfer} className="space-y-4 font-body">
+          {user && user.kycStatus !== 'VERIFIED' ? (
+            <div className="p-6 bg-amber-50/50 border border-amber-200 dark:bg-amber-950/10 dark:border-amber-900/30 rounded-card text-center space-y-3 font-body mt-4">
+              <IconLock className="w-8 h-8 text-amber-500 mx-auto" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">Transfers Locked</p>
+                <p className="text-[10px] text-slate-500 leading-relaxed max-w-[280px] mx-auto">
+                  Your Aadhaar identity document is pending review. Please wait for registrar approval to unlock transfer capabilities.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleInitiateTransfer} className="space-y-4 font-body">
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-heading font-bold text-slate-400">Select Property</label>
               <select
@@ -333,6 +345,7 @@ export default function CitizenTransferPage() {
               )}
             </button>
           </form>
+          )}
         </div>
 
         {/* Active transfers tracker */}

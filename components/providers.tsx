@@ -9,14 +9,15 @@ interface User {
   id: string;
   name: string;
   phone: string;
-  role: "CITIZEN" | "BANK" | "REGISTRAR" | "ADMIN";
+  role: "CITIZEN" | "BANK" | "REGISTRAR" | "ADMIN" | "BUILDER" | "AGRI";
   walletAddress?: string;
   aadhaarHash: string;
+  kycStatus?: "PENDING_MANUAL_REVIEW" | "VERIFIED" | "REJECTED";
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (aadhaarOrHash: string, role?: string, customName?: string) => Promise<boolean>;
+  login: (aadhaarOrHash: string, role?: string, customName?: string, customKycStatus?: string) => Promise<boolean>;
   logout: () => void;
   connectWallet: () => Promise<string | null>;
   walletAddress: string | null;
@@ -48,7 +49,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (aadhaarOrHash: string, selectedRole: string = "CITIZEN", customName?: string) => {
+  const login = async (aadhaarOrHash: string, selectedRole: string = "CITIZEN", customName?: string, customKycStatus?: string) => {
     let aadhaarHash = aadhaarOrHash.replace(/\s/g, "");
     if (aadhaarHash.length === 12 && !isNaN(Number(aadhaarHash))) {
       aadhaarHash = "aadhaar_" + aadhaarHash;
@@ -58,6 +59,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     let name = customName || "Rohan Sharma";
     let phone = "+91 98765 43210";
     let role = selectedRole;
+    let kycStatus = customKycStatus || "VERIFIED";
 
     try {
       const res = await fetch(`/api/user/lookup?aadhaarHash=${encodeURIComponent(aadhaarHash)}`);
@@ -69,6 +71,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         name = data.name;
         phone = data.phone || phone;
         role = data.role;
+        kycStatus = data.kycStatus || kycStatus;
       }
     } catch (err) {
       console.warn("User lookup failed during login provider setup, using default details.");
@@ -81,6 +84,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       phone,
       role: role as any,
       walletAddress: walletAddress || undefined,
+      kycStatus: kycStatus as any,
     };
 
     setUser(mockUser);

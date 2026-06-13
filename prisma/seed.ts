@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
+
+const pepper = process.env.AADHAAR_HASH_PEPPER || 'default_aadhaar_pepper_min_32_chars_long_for_security';
+function hashMobile(mobile: string): string {
+  const cleanMobile = mobile.replace(/[^\d]/g, '');
+  return crypto.createHash('sha256').update(cleanMobile + pepper).digest('hex');
+}
 
 async function main() {
   console.log("Seeding LandChain database...");
@@ -31,6 +38,7 @@ async function main() {
       aadhaarHash: "aadhaar_123456789012", // mock Aadhaar prefix for "1234 5678 9012"
       name: "Rohan Sharma",
       phone: "+91 98765 43210",
+      mobileHash: hashMobile("9876543210"),
       email: "rohan.sharma@example.com",
       role: "CITIZEN",
       walletAddress: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // Hardhat Account #0
@@ -39,6 +47,8 @@ async function main() {
       address: "Sector 62, Noida, Uttar Pradesh, 201301",
       careOf: "C/O Sharma",
       kycVerifiedAt: new Date(),
+      kycStatus: "VERIFIED",
+      kycMethod: "UIDAI_OTP",
     },
   });
 
@@ -47,6 +57,7 @@ async function main() {
       aadhaarHash: "aadhaar_888888888888", // mock Aadhaar prefix for "8888 8888 8888"
       name: "Officer Amit Kumar",
       phone: "+91 99999 88888",
+      mobileHash: hashMobile("9999988888"),
       email: "amit.kumar@gov.in",
       role: "REGISTRAR",
       walletAddress: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // Hardhat Account #1
@@ -55,6 +66,8 @@ async function main() {
       address: "Government Quarters, Sector 2, Noida, Uttar Pradesh, 201301",
       careOf: "C/O India",
       kycVerifiedAt: new Date(),
+      kycStatus: "VERIFIED",
+      kycMethod: "UIDAI_OTP",
     },
   });
 
@@ -63,6 +76,7 @@ async function main() {
       aadhaarHash: "aadhaar_777777777777", // mock Aadhaar prefix for "7777 7777 7777"
       name: "SBI Verifier Officer",
       phone: "+91 88888 77777",
+      mobileHash: hashMobile("8888877777"),
       email: "verifier.sbi@sbi.co.in",
       role: "BANK",
       walletAddress: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", // Hardhat Account #2
@@ -71,6 +85,8 @@ async function main() {
       address: "SBI Building, Shivaji Nagar, Pune, Maharashtra, 411005",
       careOf: "C/O State Bank of India",
       kycVerifiedAt: new Date(),
+      kycStatus: "VERIFIED",
+      kycMethod: "UIDAI_OTP",
     },
   });
 
