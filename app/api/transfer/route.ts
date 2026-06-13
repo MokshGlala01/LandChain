@@ -49,6 +49,9 @@ export async function POST(req: Request) {
           name: "Buyer (Aadhaar Verified)",
           phone: "+91 98989 " + Math.floor(10000 + Math.random() * 90000),
           role: "CITIZEN",
+          dob: new Date("1990-01-01"),
+          gender: "Male",
+          kycVerifiedAt: new Date(),
         },
       });
     }

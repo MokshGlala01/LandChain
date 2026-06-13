@@ -14,12 +14,16 @@ model User {
   phone         String?
   email         String?
   role          String     @default("CITIZEN")
+  status        String     @default("ACTIVE")
   walletAddress String?
-  dob           DateTime?
-  gender        String?
-  language      String?
-  kycVerifiedAt DateTime?
-  kycMethod     String?
+  dob           DateTime
+  gender        String
+  address       String     @default("Not Provided")
+  careOf        String?
+  photoUrl      String?
+  language      String?    @default("en")
+  kycVerifiedAt DateTime   @default(now())
+  kycMethod     String     @default("UIDAI_OTP")
   properties    Property[]
   createdAt     DateTime   @default(now())
 }

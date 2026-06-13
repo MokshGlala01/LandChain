@@ -40,8 +40,11 @@ export async function POST(req: Request) {
         name,
         phone,
         email: email || null,
-        role,
+        role: role as any,
         walletAddress: walletAddress || null,
+        dob: new Date("1990-01-01"),
+        gender: "Male",
+        kycVerifiedAt: new Date(),
       },
     });
 

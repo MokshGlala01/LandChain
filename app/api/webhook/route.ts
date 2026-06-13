@@ -34,6 +34,9 @@ export async function POST(req: Request) {
             phone: "+91 90000 00000",
             role: "CITIZEN",
             walletAddress: owner,
+            dob: new Date("1990-01-01"),
+            gender: "Male",
+            kycVerifiedAt: new Date(),
           },
         });
       }
@@ -88,6 +91,9 @@ export async function POST(req: Request) {
             phone: "+91 90000 00000",
             role: "CITIZEN",
             walletAddress: to,
+            dob: new Date("1990-01-01"),
+            gender: "Male",
+            kycVerifiedAt: new Date(),
           },
         });
       }

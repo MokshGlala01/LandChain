@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { signJwt, SESSION_COOKIE_NAME } from '@/lib/auth-session'
+import fs from 'fs'
+import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
 const ROLE_MAP: Record<string, string> = {
-  citizen: 'CITIZEN',
-  builder: 'BUILDER',
-  bank: 'BANK',
-  registrar: 'REGISTRAR',
-  agri: 'AGRI',
-  admin: 'ADMIN',
+  'citizen': 'CITIZEN',
   'bank officer': 'BANK',
-  'agricultural officer': 'AGRI'
+  'bank': 'BANK',
+  'registrar': 'REGISTRAR',
+  'builder': 'BUILDER',
+  'agricultural officer': 'AGRI',
+  'agri': 'AGRI',
+  'admin': 'ADMIN'
 }
 
 /**
@@ -35,7 +37,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'USER_NOT_FOUND' }, { status: 404 })
     }
 
-    // Sign JWT
+    if (user.status === 'PENDING_APPROVAL') {
+      return NextResponse.json({ success: true, pendingApproval: true })
+    }
+
     const token = await signJwt({
       userId: user.id,
       role: user.role,
@@ -44,21 +49,16 @@ export async function GET(req: NextRequest) {
 
     const response = NextResponse.json({ success: true, role: user.role })
     
-    // Set cookie
     response.headers.set(
       'Set-Cookie',
       `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`
     )
 
-    // Log login
     await prisma.auditLog.create({
       data: {
-        action: 'USER_LOGGED_IN',
-        entityId: user.id,
-        entityType: 'USER',
+        action: 'LOGIN_SUCCESS',
         actorId: user.id,
-        metadata: JSON.stringify({ method: 'UIDAI_OTP' }),
-        timestamp: new Date()
+        metadata: JSON.stringify({ method: 'UIDAI_OTP' })
       }
     })
 
@@ -79,18 +79,17 @@ export async function POST(req: NextRequest) {
       name,
       dob,
       gender,
-      email,
-      phone,
       role,
-      language,
-      uidaiTxnId
+      address,
+      careOf,
+      photo
     } = await req.json()
 
     if (!aadhaarHash || !name) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
 
-    // Map role to standard format
+    // Map role
     const dbRole = ROLE_MAP[role?.toLowerCase()] || 'CITIZEN'
 
     // Check if user already exists
@@ -98,50 +97,66 @@ export async function POST(req: NextRequest) {
       where: { aadhaarHash }
     })
 
-    let isNewUser = false
-
-    if (!user) {
-      isNewUser = true
-      user = await prisma.user.create({
-        data: {
-          aadhaarHash,
-          name,
-          dob: dob ? new Date(dob) : null,
-          gender,
-          email: email || null,
-          phone: phone || null,
-          role: dbRole,
-          language: language || 'en',
-          kycVerifiedAt: new Date(),
-          kycMethod: uidaiTxnId ? 'UIDAI_OTP' : 'DIGILOCKER'
-        }
-      })
+    if (user) {
+      return NextResponse.json({ error: 'ACCOUNT_EXISTS' }, { status: 409 })
     }
 
-    // Sign JWT
+    // Handle photo saving
+    let photoUrl: string | null = null
+    if (photo) {
+      try {
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'users')
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true })
+        }
+        const buffer = Buffer.from(photo, 'base64')
+        const fileName = `${aadhaarHash}.jpg`
+        const filePath = path.join(uploadDir, fileName)
+        fs.writeFileSync(filePath, buffer)
+        photoUrl = `/uploads/users/${fileName}`
+      } catch (err) {
+        console.error('Failed to save profile photo:', err)
+      }
+    }
+
+    const isCitizen = dbRole === 'CITIZEN'
+    user = await prisma.user.create({
+      data: {
+        aadhaarHash,
+        name,
+        dob: dob ? new Date(dob) : new Date("1990-01-01"),
+        gender: gender || "Male",
+        role: dbRole,
+        status: isCitizen ? 'ACTIVE' : 'PENDING_APPROVAL',
+        address: address || "Not Provided",
+        careOf: careOf || null,
+        photoUrl: photoUrl || null,
+        kycVerifiedAt: new Date(),
+        kycMethod: 'UIDAI_OTP'
+      }
+    })
+
+    if (user.status === 'PENDING_APPROVAL') {
+      return NextResponse.json({ success: true, pendingApproval: true })
+    }
+
     const token = await signJwt({
       userId: user.id,
       role: user.role,
       name: user.name
     }, '7d')
 
-    const response = NextResponse.json({ success: true, role: user.role, isNewUser })
-    
-    // Set secure cookie
+    const response = NextResponse.json({ success: true, role: user.role })
     response.headers.set(
       'Set-Cookie',
       `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`
     )
 
-    // Log registration audit
     await prisma.auditLog.create({
       data: {
-        action: isNewUser ? 'USER_REGISTERED' : 'USER_LOGGED_IN',
-        entityId: user.id,
-        entityType: 'USER',
+        action: 'USER_REGISTERED',
         actorId: user.id,
-        metadata: JSON.stringify({ method: uidaiTxnId ? 'UIDAI_OTP' : 'DIGILOCKER' }),
-        timestamp: new Date()
+        metadata: JSON.stringify({ method: 'UIDAI_OTP' })
       }
     })
 

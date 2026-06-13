@@ -39,6 +39,9 @@ export async function POST(req: Request) {
           name: "Rohan Sharma",
           phone: "+91 98765 43210",
           role: "CITIZEN",
+          dob: new Date("1990-01-01"),
+          gender: "Male",
+          kycVerifiedAt: new Date(),
         },
       });
     }

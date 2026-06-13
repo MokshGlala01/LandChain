@@ -1,24 +1,38 @@
 import Redis from 'ioredis'
 
-let redis: Redis | null = null
 const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL
 
-if (redisUrl) {
-  try {
-    redis = new Redis(redisUrl, {
-      maxRetriesPerRequest: 1,
-      connectTimeout: 2000
-    })
-    redis.on('error', (err) => {
-      console.warn('[Cache] Redis error, falling back to memory:', err.message)
-    })
-  } catch (err) {
-    console.warn('[Cache] Failed to initialize Redis client, using memory fallback.')
+const globalForCache = global as unknown as {
+  memoryStore?: Map<string, { valStr: string; expiresAt: number }>;
+  redis?: Redis | null;
+}
+
+if (!globalForCache.memoryStore) {
+  globalForCache.memoryStore = new Map()
+}
+const memoryStore = globalForCache.memoryStore
+
+if (globalForCache.redis === undefined) {
+  if (redisUrl) {
+    try {
+      const redisClient = new Redis(redisUrl, {
+        maxRetriesPerRequest: 1,
+        connectTimeout: 2000
+      })
+      redisClient.on('error', (err) => {
+        console.warn('[Cache] Redis error, falling back to memory:', err.message)
+      })
+      globalForCache.redis = redisClient
+    } catch (err) {
+      console.warn('[Cache] Failed to initialize Redis client, using memory fallback.')
+      globalForCache.redis = null
+    }
+  } else {
+    globalForCache.redis = null
   }
 }
 
-// In-memory cache fallback
-const memoryStore = new Map<string, { valStr: string; expiresAt: number }>()
+const redis = globalForCache.redis
 
 export async function cacheGet(key: string): Promise<any> {
   if (redis && redis.status === 'ready') {

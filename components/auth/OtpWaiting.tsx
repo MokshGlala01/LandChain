@@ -2,53 +2,34 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { IconDeviceMobile, IconMessageCircle2 } from '@tabler/icons-react'
+import { IconDeviceMobileMessage } from '@tabler/icons-react'
 
 export default function OtpWaiting() {
   return (
     <div className="flex flex-col items-center text-center space-y-6 py-6">
-      {/* Centered Graphic Illustration */}
-      <div className="relative flex justify-center items-center w-28 h-28">
+      {/* Centered Graphic Icon */}
+      <div className="relative flex justify-center items-center w-20 h-20 bg-emerald-50 dark:bg-emerald-950/20 rounded-full border border-emerald-100 dark:border-emerald-900/30">
         <motion.div
-          animate={{ scale: [1, 1.25, 1], opacity: [0.15, 0.4, 0.15] }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.4, 0.15] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-24 h-24 bg-emerald-100 rounded-full"
+          className="absolute inset-0 bg-emerald-100 dark:bg-emerald-900/30 rounded-full"
         />
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          className="absolute w-20 h-20 bg-emerald-200/50 rounded-full"
-        />
-        <div className="relative p-5 bg-white rounded-2xl border border-slate-200/80 shadow-md">
-          <IconDeviceMobile className="w-12 h-12 text-[#0F6E56]" />
-          <motion.div
-            initial={{ y: 5, opacity: 0 }}
-            animate={{ y: -5, opacity: [0, 1, 1, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-            className="absolute -top-1 -right-1 p-1 bg-amber-500 text-white rounded-full border-2 border-white"
-          >
-            <IconMessageCircle2 className="w-4 h-4" />
-          </motion.div>
-        </div>
+        <IconDeviceMobileMessage className="w-12 h-12 text-[#0F6E56] dark:text-emerald-400 relative z-10" />
       </div>
 
       <div className="space-y-3 max-w-[340px]">
-        <h3 className="text-xl font-bold text-gray-900">OTP Sent by UIDAI</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100">OTP sent by UIDAI</h3>
         
-        <p className="text-sm text-gray-600 leading-relaxed">
-          A 6-digit One-Time Password has been sent by UIDAI to the mobile number 
-          registered with your Aadhaar card.
+        <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed font-medium">
+          UIDAI has sent a 6-digit OTP to the mobile number registered 
+          with this Aadhaar number.
         </p>
 
-        <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2.5 border border-amber-200/50 leading-relaxed font-medium">
-          Please check your phone — the SMS will come directly from <span className="font-bold">UIDAI</span> or 
-          <span className="font-bold"> AD-UIDAI</span>, not from LandChain.
+        <p className="text-xs text-gray-400 dark:text-slate-500 leading-relaxed">
+          LandChain does not have access to this mobile number. 
+          Check the SMS on the device linked to your Aadhaar.
         </p>
       </div>
-
-      <p className="text-[11px] text-gray-400 font-medium tracking-wide">
-        🚨 Don&apos;t share this OTP with anyone, including LandChain staff.
-      </p>
     </div>
   )
 }
