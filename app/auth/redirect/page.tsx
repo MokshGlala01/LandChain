@@ -22,8 +22,9 @@ export default function AuthRedirect() {
       router.push('/login')
       return
     }
-    if (session?.user?.role) {
-      const path = roleRoutes[session.user.role] ?? '/citizen'
+    if (session?.user) {
+      const role = session.user.role || 'CITIZEN'
+      const path = roleRoutes[role] ?? '/citizen'
       router.push(path)
     }
   }, [session, status, router])
