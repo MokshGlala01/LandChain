@@ -6,6 +6,11 @@ import { prisma } from '@/lib/db'
 import { comparePassword } from '@/lib/password'
 import { z } from 'zod'
 
+// Temporary — add at top of file, remove after fix confirmed
+console.log('🔍 GOOGLE_CLIENT_ID loaded:', !!process.env.GOOGLE_CLIENT_ID)
+console.log('🔍 GOOGLE_CLIENT_ID value starts with:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20))
+console.log('🔍 NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
@@ -15,8 +20,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy-client-secret'
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
     }),
     Credentials({
       name: 'Email',
