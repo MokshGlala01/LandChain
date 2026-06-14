@@ -8,27 +8,67 @@ generator client {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  aadhaarHash   String     @unique
-  name          String
-  phone         String?
-  email         String?
-  role          String     @default("CITIZEN")
-  status        String     @default("ACTIVE")
-  walletAddress String?
-  dob           DateTime
-  gender        String
-  address       String     @default("Not Provided")
-  careOf        String?
-  photoUrl      String?
-  language      String?    @default("en")
-  mobileHash          String?    @unique
+  id                  String               @id @default(cuid())
+  name                String
+  email               String?              @unique
+  password            String?
+  image               String?
+  role                String               @default("CITIZEN")
+  status              String               @default("ACTIVE")
+  emailVerified       DateTime?
+  accounts            Account[]
+  sessions            Session[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  // Legacy fields retained for application compatibility
+  aadhaarHash         String?              @unique
+  phone               String?
+  walletAddress       String?
+  dob                 DateTime?
+  gender              String?
+  address             String               @default("Not Provided")
+  careOf              String?
+  photoUrl            String?
+  language            String?              @default("en")
+  mobileHash          String?              @unique
   aadhaarDocIpfsHash  String?
-  kycStatus           String     @default("PENDING_MANUAL_REVIEW")
+  kycStatus           String               @default("VERIFIED")
   kycVerifiedAt       DateTime?
-  kycMethod           String     @default("MANUAL_UPLOAD")
-  properties    Property[]
-  createdAt     DateTime   @default(now())
+  kycMethod           String               @default("EMAIL")
+  properties          Property[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
 }
 
 model Property {

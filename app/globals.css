@@ -51,3 +51,100 @@
   background: var(--border);
   border-radius: 4px;
 }
+
+/* Authentication layout and form components */
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  padding: 1rem;
+}
+
+.dark .auth-layout {
+  background: #030806;
+}
+
+.auth-card {
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.dark .auth-card {
+  background: #090e0c;
+}
+
+.auth-header { text-align: center; margin-bottom: 1.5rem; }
+.auth-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.auth-header p { font-size: 14px; color: #6b7280; }
+
+.btn-primary {
+  width: 100%;
+  background: #0F6E56;
+  color: white;
+  border: none;
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #0f172a;
+}
+.dark .btn-google {
+  background: #090e0c;
+  color: #f8fafc;
+}
+.btn-google:hover { background: #f9fafb; }
+.dark .btn-google:hover { background: #111a16; }
+
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 1.25rem 0; }
+.auth-divider-line { flex: 1; height: 0.5px; background: var(--border); }
+.auth-divider-text { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+.field input, .field select {
+  width: 100%;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  outline: none;
+  background: transparent;
+  color: inherit;
+}
+.field input:focus, .field select:focus { border-color: #0F6E56; }
+.field-error { font-size: 12px; color: #E24B4A; margin-top: 4px; }
+.field-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+.forgot-link { display: block; font-size: 12px; color: #185FA5; text-align: right; margin-top: 4px; }
+
+.password-strength {
+  margin-top: 6px;
+}
+.strength-bars { display: flex; gap: 4px; margin-top: 6px; }
+.strength-bar { height: 3px; flex: 1; border-radius: 2px; transition: background 0.2s; }
+
+.auth-footer { text-align: center; font-size: 13px; color: #6b7280; margin-top: 1.25rem; }
+.auth-footer a { color: #0F6E56; font-weight: 500; }

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -32,6 +33,8 @@ async function main() {
   await prisma.publicNotice.deleteMany({});
   await prisma.agriculturalDetails.deleteMany({});
 
+  const hashedPassword = await bcrypt.hash("Password123!", 12);
+
   // 2. Create Users
   const citizen = await prisma.user.create({
     data: {
@@ -40,6 +43,8 @@ async function main() {
       phone: "+91 98765 43210",
       mobileHash: hashMobile("9876543210"),
       email: "rohan.sharma@example.com",
+      password: hashedPassword,
+      emailVerified: new Date(),
       role: "CITIZEN",
       walletAddress: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // Hardhat Account #0
       dob: new Date("1990-01-01"),
@@ -59,6 +64,8 @@ async function main() {
       phone: "+91 99999 88888",
       mobileHash: hashMobile("9999988888"),
       email: "amit.kumar@gov.in",
+      password: hashedPassword,
+      emailVerified: new Date(),
       role: "REGISTRAR",
       walletAddress: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // Hardhat Account #1
       dob: new Date("1980-04-12"),
@@ -78,6 +85,8 @@ async function main() {
       phone: "+91 88888 77777",
       mobileHash: hashMobile("8888877777"),
       email: "verifier.sbi@sbi.co.in",
+      password: hashedPassword,
+      emailVerified: new Date(),
       role: "BANK",
       walletAddress: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", // Hardhat Account #2
       dob: new Date("1985-09-25"),

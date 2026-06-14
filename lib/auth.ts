@@ -1,62 +1,96 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
+import NextAuth from 'next-auth'
+import Google from 'next-auth/providers/google'
+import Credentials from 'next-auth/providers/credentials'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import { prisma } from '@/lib/db'
+import { comparePassword } from '@/lib/password'
+import { z } from 'zod'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: 'jwt' },
+  pages: {
+    signIn: '/login',
+    newUser: '/register'
+  },
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy-client-secret'
+    }),
     Credentials({
-      name: "Aadhaar OTP",
+      name: 'Email',
       credentials: {
-        aadhaar: { label: "Aadhaar Number", type: "text" },
-        otp: { label: "OTP", type: "text" },
-        role: { label: "Role", type: "text" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.aadhaar || !credentials?.otp) return null;
-        
-        // Mock verification: standard mock OTP is "123456"
-        if (credentials.otp !== "123456" && credentials.otp !== "1234") {
-          return null;
-        }
+        const parsed = z.object({
+          email: z.string().email(),
+          password: z.string().min(8)
+        }).safeParse(credentials)
 
-        const role = credentials.role || "CITIZEN";
-        const aadhaar = credentials.aadhaar.toString().replace(/\s/g, "");
-        const mockHash = "aadhaar_" + aadhaar;
+        if (!parsed.success) return null
 
-        return {
-          id: "usr_" + Math.random().toString(36).substring(2, 9),
-          name: role === "REGISTRAR" ? "Officer Amit Kumar" : role === "BANK" ? "SBI Verifier Officer" : "Rohan Sharma",
-          email: role === "REGISTRAR" ? "amit.kumar@gov.in" : role === "BANK" ? "verifier.sbi@sbi.co.in" : "rohan.sharma@example.com",
-          role: role,
-          aadhaarHash: mockHash,
-        } as any;
+        const user = await prisma.user.findUnique({
+          where: { email: parsed.data.email }
+        })
+
+        if (!user || !user.password) return null
+
+        const passwordMatch = await comparePassword(parsed.data.password, user.password)
+        if (!passwordMatch) return null
+
+        if (user.status === 'SUSPENDED') return null
+
+        return { id: user.id, email: user.email, name: user.name, role: user.role, image: user.image }
       }
     })
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.role = (user as any).role;
-        token.aadhaarHash = (user as any).aadhaarHash;
+        const dbUser = await prisma.user.findUnique({ where: { email: user.email! } })
+        token.userId = dbUser?.id
+        token.role = dbUser?.role
+        token.status = dbUser?.status
       }
-      return token;
+      if (trigger === 'update' && session?.role) {
+        token.role = session.role
+      }
+      return token
     },
-    session({ session, token }) {
-      if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).aadhaarHash = token.aadhaarHash;
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.userId as string
+        session.user.role = token.role as string
+        session.user.status = token.status as string
       }
-      return session;
+      return session
+    },
+    async signIn({ user, account }) {
+      if (account?.provider === 'google') {
+        const existing = await prisma.user.findUnique({ where: { email: user.email! } })
+        if (!existing) {
+          // Auto-create user on first Google sign-in
+          await prisma.user.create({
+            data: {
+              email: user.email!,
+              name: user.name ?? '',
+              image: user.image ?? '',
+              role: 'CITIZEN',
+              status: 'ACTIVE',
+              emailVerified: new Date()
+            }
+          })
+        }
+        if (existing?.status === 'SUSPENDED') return false
+      }
+      return true
     }
-  },
-  pages: {
-    signIn: "/login",
   }
-});
+})
 
-/**
- * Resilient helper to retrieve server session in API routes.
- * Checks NextAuth session first, then falls back to a cookie session for absolute compatibility during testing.
- */
 export async function getSessionUser(req?: Request) {
   try {
     const session = await auth();
@@ -64,19 +98,7 @@ export async function getSessionUser(req?: Request) {
       return session.user;
     }
   } catch (err) {
-    console.warn("NextAuth session check failed, falling back to header/cookie session.");
+    console.warn("NextAuth session check failed.");
   }
-
-  // Fallback: check cookie for mock testing
-  if (req) {
-    try {
-      const cookieHeader = req.headers.get("cookie") || "";
-      const match = cookieHeader.match(/landchain_user=([^;]+)/);
-      if (match) {
-        return JSON.parse(decodeURIComponent(match[1]));
-      }
-    } catch (_) {}
-  }
-  
   return null;
 }

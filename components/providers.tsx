@@ -2,16 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { ThemeProvider } from "next-themes";
+import { SessionProvider, useSession, signOut as nextAuthSignOut } from "next-auth/react";
 
-// Define a simple custom AuthContext for the Aadhaar mock login flow to keep things robust,
-// while also allowing seamless NextAuth bindings.
 interface User {
   id: string;
   name: string;
-  phone: string;
+  email: string;
   role: "CITIZEN" | "BANK" | "REGISTRAR" | "ADMIN" | "BUILDER" | "AGRI";
   walletAddress?: string;
-  aadhaarHash: string;
+  aadhaarHash?: string;
   kycStatus?: "PENDING_MANUAL_REVIEW" | "VERIFIED" | "REJECTED";
 }
 
@@ -34,67 +33,53 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <ProvidersContent>{children}</ProvidersContent>
+      </ThemeProvider>
+    </SessionProvider>
+  );
+}
+
+function ProvidersContent({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
-  // Load user from localStorage on mount
+  // Load wallet from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem("landchain_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
     const savedWallet = localStorage.getItem("landchain_wallet");
     if (savedWallet) {
       setWalletAddress(savedWallet);
     }
   }, []);
 
+  // Sync user state from NextAuth session
+  useEffect(() => {
+    if (session?.user) {
+      setUser({
+        id: session.user.id as string,
+        name: session.user.name as string,
+        email: session.user.email as string,
+        role: (session.user.role || "CITIZEN") as any,
+        walletAddress: walletAddress || undefined,
+        aadhaarHash: (session.user as any).aadhaarHash || undefined,
+        kycStatus: "VERIFIED", // default verified for Email/Google flow
+      });
+    } else if (status === "unauthenticated") {
+      setUser(null);
+    }
+  }, [session, status, walletAddress]);
+
   const login = async (aadhaarOrHash: string, selectedRole: string = "CITIZEN", customName?: string, customKycStatus?: string) => {
-    let aadhaarHash = aadhaarOrHash.replace(/\s/g, "");
-    if (aadhaarHash.length === 12 && !isNaN(Number(aadhaarHash))) {
-      aadhaarHash = "aadhaar_" + aadhaarHash;
-    }
-    
-    let id = "usr_" + Math.random().toString(36).substring(2, 9);
-    let name = customName || "Rohan Sharma";
-    let phone = "+91 98765 43210";
-    let role = selectedRole;
-    let kycStatus = customKycStatus || "VERIFIED";
-
-    try {
-      const res = await fetch(`/api/user/lookup?aadhaarHash=${encodeURIComponent(aadhaarHash)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.id) {
-          id = data.id;
-        }
-        name = data.name;
-        phone = data.phone || phone;
-        role = data.role;
-        kycStatus = data.kycStatus || kycStatus;
-      }
-    } catch (err) {
-      console.warn("User lookup failed during login provider setup, using default details.");
-    }
-
-    const mockUser: User = {
-      id,
-      aadhaarHash,
-      name,
-      phone,
-      role: role as any,
-      walletAddress: walletAddress || undefined,
-      kycStatus: kycStatus as any,
-    };
-
-    setUser(mockUser);
-    localStorage.setItem("landchain_user", JSON.stringify(mockUser));
+    // This is a legacy placeholder login function since login is now managed via NextAuth signIn
     return true;
   };
 
   const logout = () => {
+    nextAuthSignOut();
     setUser(null);
-    localStorage.removeItem("landchain_user");
   };
 
   const connectWallet = async () => {
@@ -107,11 +92,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         setWalletAddress(address);
         localStorage.setItem("landchain_wallet", address);
         
-        // Update current user if exists
         if (user) {
-          const updated = { ...user, walletAddress: address };
-          setUser(updated);
-          localStorage.setItem("landchain_user", JSON.stringify(updated));
+          setUser({ ...user, walletAddress: address });
         }
         return address;
       } catch (err) {
@@ -119,25 +101,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
         return null;
       }
     } else {
-      // Mock wallet generation if MetaMask is not present
       const mockAddress = "0x" + Math.random().toString(16).substring(2, 42);
       setWalletAddress(mockAddress);
       localStorage.setItem("landchain_wallet", mockAddress);
       
       if (user) {
-        const updated = { ...user, walletAddress: mockAddress };
-        setUser(updated);
-        localStorage.setItem("landchain_user", JSON.stringify(updated));
+        setUser({ ...user, walletAddress: mockAddress });
       }
       return mockAddress;
     }
   };
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <AuthContext.Provider value={{ user, login, logout, connectWallet, walletAddress }}>
-        {children}
-      </AuthContext.Provider>
-    </ThemeProvider>
+    <AuthContext.Provider value={{ user, login, logout, connectWallet, walletAddress }}>
+      {children}
+    </AuthContext.Provider>
   );
 }

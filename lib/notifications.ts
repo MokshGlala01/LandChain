@@ -1,4 +1,36 @@
-import { sendTwilioSms } from "./sms";
+async function sendTwilioSms(to: string, body: string): Promise<boolean> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_PHONE_NUMBER;
+
+  if (!accountSid || !authToken || !from) {
+    console.log(`[Twilio SMS Bypass] Mock SMS to ${to}: ${body}`);
+    return false;
+  }
+
+  try {
+    const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${auth}`,
+        },
+        body: new URLSearchParams({
+          To: to,
+          From: from,
+          Body: body,
+        }).toString(),
+      }
+    );
+    return response.ok;
+  } catch (error) {
+    console.error("[Twilio SMS Dispatch Exception]:", error);
+    return false;
+  }
+}
 
 export async function sendNotification(
   userId: string,

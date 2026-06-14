@@ -49,3 +49,17 @@ export function hashMobile(mobile: string): string {
   const pepper = process.env.AADHAAR_HASH_PEPPER || 'default_aadhaar_pepper_min_32_chars_long_for_security'
   return crypto.createHash('sha256').update(cleanMobile + pepper).digest('hex')
 }
+
+export function redirectByRole(role: string, router?: any): string {
+  const routes: Record<string, string> = {
+    CITIZEN:    '/citizen',
+    REGISTRAR:  '/registrar',
+    BANK:       '/bank',
+    ADMIN:      '/admin',
+    BUILDER:    '/builder',
+    AGRI:       '/agri'
+  }
+  const path = routes[role] ?? '/citizen'
+  if (router) router.push(path)
+  return path
+}

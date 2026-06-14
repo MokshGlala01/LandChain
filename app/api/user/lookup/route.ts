@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { generateOtp, saveOtp } from "@/lib/otpStore";
-import { sendTwilioSms } from "@/lib/sms";
+import { cacheSet } from "@/lib/auth-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +54,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // Mask phone number: e.g. +91 98765 43210 -> +91 ******3210
+    // Mask phone number
     const rawPhone = user.phone;
     let maskedPhone = rawPhone;
     if (rawPhone && rawPhone.length > 4) {
@@ -65,25 +64,16 @@ export async function GET(req: Request) {
       maskedPhone = `${prefix}******${lastFour}`;
     }
 
-    // 1. Generate new dynamic OTP
-    const otp = generateOtp();
-
-    // 2. Save OTP to global cache
-    saveOtp(cleanAadhaar, otp);
-
-    // 3. Dispatch SMS via Twilio
-    const messageBody = `LandChain Verification: Your Aadhaar Secure OTP is ${otp}. Valid for 5 minutes. Do not share this code.`;
-    const sentRealSms = await sendTwilioSms(rawPhone || "", messageBody);
-
-    // 4. If SMS could not be sent (Twilio not configured), return the simulated OTP for offline display
-    const simulatedOtp = sentRealSms ? null : otp;
+    // Generate simulated/mock OTP
+    const otp = "123456";
+    await cacheSet(`aadhaar_otp:${cleanAadhaar}`, otp, 300); // 5 mins expiry
 
     return NextResponse.json({
       id: user.id,
       name: user.name,
       role: user.role,
       phone: maskedPhone,
-      simulatedOtp,
+      simulatedOtp: otp,
     });
   } catch (error: any) {
     console.error("Error in GET /api/user/lookup:", error);

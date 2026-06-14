@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyOtp } from "@/lib/otpStore";
+import { cacheGet } from "@/lib/auth-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,10 @@ export async function POST(req: Request) {
     }
 
     const cleanAadhaar = aadhaar.replace(/\s/g, "");
-    const isValid = verifyOtp(cleanAadhaar, otp);
+    
+    // Verify OTP using the cache store
+    const expectedOtp = await cacheGet(`aadhaar_otp:${cleanAadhaar}`);
+    const isValid = expectedOtp && expectedOtp === otp;
 
     if (!isValid) {
       return NextResponse.json(
