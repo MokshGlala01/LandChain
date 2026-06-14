@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showGoogleModal, setShowGoogleModal] = useState(false)
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,12 +41,7 @@ export default function LoginPage() {
       }
 
       toast.success('Successfully logged in!')
-      const session = await getSession()
-      if (session?.user?.role) {
-        redirectByRole(session.user.role, router)
-      } else {
-        router.push('/citizen')
-      }
+      router.push('/auth/redirect')
     } catch (err: any) {
       console.error(err)
       setError(err.message || 'An unexpected error occurred.')
@@ -55,9 +51,42 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      await signIn('google', { callbackUrl: '/api/auth/callback' })
+      // Check if credentials are configured
+      const res = await fetch('/api/auth/config')
+      const data = await res.json()
+      if (!data.isConfigured) {
+        setShowGoogleModal(true)
+        return
+      }
+      await signIn('google', { callbackUrl: '/auth/redirect' })
     } catch (err: any) {
       toast.error('Google login failed.')
+    }
+  }
+
+  const handleMockGoogleLogin = async (emailToUse = 'mokshgala.ijs009@gmail.com') => {
+    setLoading(true)
+    setError(null)
+    setShowGoogleModal(false)
+    try {
+      const result = await signIn('credentials', {
+        email: emailToUse,
+        isMockGoogle: 'true',
+        redirect: false
+      })
+
+      if (result?.error) {
+        setError('Mock Google login failed.')
+        setLoading(false)
+        return
+      }
+
+      toast.success('Successfully logged in with Mock Google!')
+      router.push('/auth/redirect')
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || 'An unexpected error occurred.')
+      setLoading(false)
     }
   }
 
@@ -133,6 +162,48 @@ export default function LoginPage() {
           Create one →
         </Link>
       </div>
+
+      {showGoogleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3 text-amber-500">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Google Credentials Pending</h3>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              Your local <code className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs text-rose-600 dark:text-rose-400">.env.local</code> contains Google Client ID placeholder values. Continuing with the actual Google login will trigger an <strong>invalid_client (Error 401)</strong>.
+            </p>
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleMockGoogleLogin('mokshgala.ijs009@gmail.com')}
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/10"
+              >
+                <span>✨ Use Mock Developer Login</span>
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowGoogleModal(false)
+                  await signIn('google', { callbackUrl: '/auth/redirect' })
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition-all"
+              >
+                Continue with Real Google OAuth
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(false)}
+                className="w-full py-2.5 px-4 text-center text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
