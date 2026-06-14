@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth-edge'
 import { NextResponse } from 'next/server'
 
 export default auth((req) => {
@@ -27,7 +27,7 @@ export default auth((req) => {
       ADMIN: '/admin', BUILDER: '/builder', AGRI: '/agri'
     }
     const allowed = roleRoutes[session.user?.role ?? 'CITIZEN']
-    if (!pathname.startsWith(allowed)) {
+    if (allowed && !pathname.startsWith(allowed)) {
       return NextResponse.redirect(new URL(allowed, req.url))
     }
   }

@@ -4,9 +4,7 @@ import Credentials from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/db'
 import { comparePassword } from '@/lib/password'
-import { z } from 'zod'
 
-// Temporary — add at top of file, remove after fix confirmed
 console.log('🔍 GOOGLE_CLIENT_ID loaded:', !!process.env.GOOGLE_CLIENT_ID)
 console.log('🔍 GOOGLE_CLIENT_ID value starts with:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20))
 console.log('🔍 NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
@@ -42,12 +40,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (credentials?.isMockGoogle === 'true') {
           const email = (credentials?.email as string) || 'mokshgala.ijs009@gmail.com'
           
-          let user = await prisma.user.findUnique({
-            where: { email }
-          })
+          let user = await prisma.user.findUnique({ where: { email } })
 
           if (!user) {
-            // Auto-create user on first Mock Google sign-in
             user = await prisma.user.create({
               data: {
                 email,
@@ -61,7 +56,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           if (user.status === 'SUSPENDED') return null
-
           return { id: user.id, email: user.email, name: user.name, role: user.role, image: user.image }
         }
 
@@ -73,20 +67,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.password) return null
 
-        const valid = await comparePassword(
-          credentials.password as string,
-          user.password
-        )
+        const valid = await comparePassword(credentials.password as string, user.password)
         if (!valid) return null
         if (user.status === 'SUSPENDED') return null
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role
-        }
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role }
       }
     })
   ],
@@ -94,9 +79,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user, account }) {
       if (account?.provider === 'google') {
         try {
-          const existing = await prisma.user.findUnique({
-            where: { email: user.email! }
-          })
+          const existing = await prisma.user.findUnique({ where: { email: user.email! } })
           if (!existing) {
             await prisma.user.create({
               data: {
@@ -120,9 +103,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email! }
-        })
+        const dbUser = await prisma.user.findUnique({ where: { email: token.email! } })
         if (dbUser) {
           token.id = dbUser.id
           token.role = dbUser.role
@@ -143,7 +124,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session
     },
     async redirect({ url, baseUrl }) {
-      // After Google login → redirect to role-based dashboard
       if (url.startsWith(baseUrl)) return url
       if (url.startsWith('/')) return `${baseUrl}${url}`
       return `${baseUrl}/auth/redirect`
@@ -153,12 +133,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
 export async function getSessionUser(req?: Request) {
   try {
-    const session = await auth();
-    if (session?.user) {
-      return session.user;
-    }
+    const session = await auth()
+    if (session?.user) return session.user
   } catch (err) {
-    console.warn("NextAuth session check failed.");
+    console.warn('NextAuth session check failed.')
   }
-  return null;
+  return null
 }

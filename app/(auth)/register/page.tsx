@@ -4,12 +4,10 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
-import { getSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { GoogleButton } from '@/components/auth/GoogleButton'
 import { AuthDivider } from '@/components/auth/AuthDivider'
 import { PasswordStrengthBar } from '@/components/auth/PasswordStrengthBar'
-import { redirectByRole } from '@/lib/auth-session'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -81,7 +79,6 @@ export default function RegisterPage() {
         return
       }
 
-      const session = await getSession()
       router.push('/auth/redirect')
     } catch (err: any) {
       console.error(err)
