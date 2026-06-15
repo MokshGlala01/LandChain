@@ -1,5 +1,8 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
+
+// Explicitly register the autoTable plugin with jsPDF for server-side environments
+applyPlugin(jsPDF);
 
 function addDecorations(doc: jsPDF, parcelId: string, title: string) {
   // Brand Header

@@ -359,13 +359,15 @@ export default function CitizenDocumentsPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
+                  <a
+                    href={resultPdf || "#"}
+                    download={`${selectedDocType.id}_${selectedParcel}.pdf`}
                     onClick={() => toast.success("PDF signature downloaded.")}
-                    className="flex-1 py-2.5 bg-brand hover:bg-brand-mid text-white text-xs font-heading font-extrabold uppercase rounded-element cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+                    className="flex-1 py-2.5 bg-[#0F6E56] hover:bg-[#075E54] text-white text-xs font-heading font-extrabold uppercase rounded-element cursor-pointer flex items-center justify-center gap-1.5 transition-colors text-center font-bold"
                   >
                     <IconDownload className="w-4 h-4" />
                     Download PDF
-                  </button>
+                  </a>
                   <button
                     onClick={() => {
                       toast.success("Linked copy successfully uploaded to DigiLocker folder.");

@@ -255,13 +255,14 @@ export default function CitizenTransferPage() {
                     type="button"
                     onClick={handleBuyerLookup}
                     disabled={buyerLookingUp}
-                    className="p-2.5 bg-slate-850 hover:bg-slate-950 text-white rounded-element cursor-pointer transition-colors"
+                    className="px-4 py-2 bg-[#0F6E56] hover:bg-[#075E54] text-white text-xs font-heading font-extrabold uppercase rounded-element cursor-pointer transition-colors flex items-center gap-1.5 font-bold"
                   >
                     {buyerLookingUp ? (
                       <IconLoader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <IconSearch className="w-4 h-4" />
                     )}
+                    <span>Verify</span>
                   </button>
                 ) : (
                   <button
@@ -271,7 +272,7 @@ export default function CitizenTransferPage() {
                       setBuyerAadhaar("");
                       setDutyPaid(false);
                     }}
-                    className="px-3 py-2 bg-red-light text-red hover:bg-red hover:text-white text-[10px] font-heading font-extrabold uppercase rounded-element cursor-pointer transition-all"
+                    className="px-4 py-2 bg-red-light text-red hover:bg-red hover:text-white text-[10px] font-heading font-extrabold uppercase rounded-element cursor-pointer transition-all font-bold"
                   >
                     Reset
                   </button>

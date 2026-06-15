@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Sharing from 'expo-sharing';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<'home' | 'scan' | 'detail'>('home');
+  const [currentScreen, setCurrentScreen] = useState<'home' | 'scan' | 'detail' | 'messages'>('home');
   const [scannedId, setScannedId] = useState('');
+  
+  // SMS Emulator State
+  const [messages, setMessages] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [serverIp, setServerIp] = useState('localhost:3000'); // Default to localhost, configurable in UI
+  const [phoneFilter, setPhoneFilter] = useState('9967238191'); // Default registered citizen phone for Aadhaar 461652059015
 
   // 1. Biometrics Local Auth check
   const handleBiometricAuth = async () => {
@@ -35,18 +41,69 @@ export default function App() {
     }
   };
 
-  // 2. Mock QR Code scanning
+  // 2. Poll SMS Server
+  useEffect(() => {
+    let intervalId: any;
+    if (isAuthenticated) {
+      const fetchMessages = async () => {
+        try {
+          // If serverIp is 'localhost:3000' and we are on Android emulator, we should map to '10.0.2.2:3000'
+          let resolvedIp = serverIp;
+          if (resolvedIp.startsWith('localhost') && typeof global !== 'undefined' && (global as any).HermesInternal) {
+            // Under React Native hermes context, detect Android to auto-map localhost
+            // But to be safe, try fetching from resolvedIp first.
+          }
+          
+          const cleanPhone = phoneFilter.replace(/[^\d]/g, '');
+          const res = await fetch(`http://${resolvedIp}/api/sms?phone=${cleanPhone}`);
+          if (res.ok) {
+            const data = await res.json();
+            // Sort oldest first for chat bubble flow
+            const sorted = data.sort((a: any, b: any) => a.timestamp - b.timestamp);
+            
+            // Check if there are new messages
+            if (sorted.length > messages.length) {
+              const newCount = sorted.length - messages.length;
+              const latestMsg = sorted[sorted.length - 1];
+              
+              // Only trigger alert if this is not the initial load
+              if (messages.length > 0) {
+                Alert.alert(
+                  `💬 New Message from ${latestMsg.from}`,
+                  latestMsg.body,
+                  [
+                    { text: 'View Messages', onPress: () => { setCurrentScreen('messages'); setUnreadCount(0); } },
+                    { text: 'Dismiss' }
+                  ]
+                );
+                setUnreadCount(prev => prev + newCount);
+              }
+            }
+            setMessages(sorted);
+          }
+        } catch (err) {
+          // Silent catch to prevent UI loops
+        }
+      };
+
+      fetchMessages();
+      intervalId = setInterval(fetchMessages, 3000); // Poll every 3 seconds
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isAuthenticated, messages.length, serverIp, phoneFilter]);
+
+  // 3. Mock QR Code scanning
   const handleScanMock = () => {
     setScannedId('PARCEL-4902-881');
     setCurrentScreen('detail');
   };
 
-  // 3. Share verified PNG card
+  // 4. Share verified PNG card
   const handleShareDeed = async () => {
     const isAvailable = await Sharing.isAvailableAsync();
     if (isAvailable) {
-      // In a live app we generate a local file path
-      // await Sharing.shareAsync(localFileUri);
       Alert.alert('Share', 'Sharing verified property receipt card via native sheet.');
     } else {
       Alert.alert('Error', 'Native sharing is not supported on this platform.');
@@ -57,7 +114,7 @@ export default function App() {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>LandChain Mobile</Text>
-        <Text style={styles.subtitle}>Secured Land Mutation Ledger Gateway</Text>
+        <Text style={styles.subtitle}>Secured Land Ledger Gateway</Text>
         <TouchableOpacity style={styles.button} onPress={handleBiometricAuth}>
           <Text style={styles.buttonText}>Authorize Biometric Login</Text>
         </TouchableOpacity>
@@ -69,7 +126,13 @@ export default function App() {
     <View style={styles.appContainer}>
       {/* Header bar */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>LandChain Registry</Text>
+        <Text style={styles.headerText}>LandChain Mobile Portal</Text>
+        <TouchableOpacity 
+          style={styles.msgBtn}
+          onPress={() => { setCurrentScreen('messages'); setUnreadCount(0); }}
+        >
+          <Text style={styles.msgBtnText}>💬 Messages {unreadCount > 0 ? `(${unreadCount})` : ''}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Screen Panels */}
@@ -86,6 +149,10 @@ export default function App() {
 
           <TouchableOpacity style={styles.button} onPress={() => setCurrentScreen('scan')}>
             <Text style={styles.buttonText}>Activate QR Scanner</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.outlineButton, { marginTop: 15 }]} onPress={() => { setCurrentScreen('messages'); setUnreadCount(0); }}>
+            <Text style={styles.outlineText}>Open Messaging App</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -124,6 +191,66 @@ export default function App() {
           </TouchableOpacity>
         </ScrollView>
       )}
+
+      {currentScreen === 'messages' && (
+        <View style={styles.messagesContainer}>
+          {/* Chat Settings Row */}
+          <View style={styles.settingsRow}>
+            <View style={styles.settingInputBox}>
+              <Text style={styles.settingLabel}>Server IP:</Text>
+              <TextInput 
+                style={styles.settingInput}
+                value={serverIp}
+                onChangeText={setServerIp}
+                placeholder="e.g. 10.0.2.2:3000"
+              />
+            </View>
+            <View style={styles.settingInputBox}>
+              <Text style={styles.settingLabel}>My Phone:</Text>
+              <TextInput 
+                style={styles.settingInput}
+                value={phoneFilter}
+                onChangeText={setPhoneFilter}
+                placeholder="e.g. 9876543210"
+              />
+            </View>
+          </View>
+
+          {/* Messages Bubble History */}
+          <Text style={styles.chatHeader}>Thread: UIDAI Secure Gateway</Text>
+          
+          <ScrollView 
+            style={styles.chatArea}
+            contentContainerStyle={styles.chatAreaContent}
+            ref={(ref: any) => ref?.scrollToEnd({ animated: true })}
+          >
+            {messages.length === 0 ? (
+              <View style={styles.emptyInbox}>
+                <Text style={styles.emptyText}>No Messages</Text>
+                <Text style={styles.emptySubText}>
+                  Send an OTP from the LandChain web portal to trigger an SMS on this device.
+                </Text>
+              </View>
+            ) : (
+              messages.map((msg) => (
+                <View key={msg.id} style={styles.bubbleContainer}>
+                  <View style={styles.bubble}>
+                    <Text style={styles.bubbleSender}>{msg.from}</Text>
+                    <Text style={styles.bubbleText}>{msg.body}</Text>
+                    <Text style={styles.bubbleTime}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          <TouchableOpacity style={styles.backBtn} onPress={() => setCurrentScreen('home')}>
+            <Text style={styles.backBtnText}>Back to Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -141,16 +268,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-    height: 80,
+    height: 90,
     backgroundColor: '#0F6E56',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
     paddingBottom: 15,
+    paddingHorizontal: 15,
   },
   headerText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  msgBtn: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+  },
+  msgBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   content: {
     padding: 20,
@@ -266,4 +406,113 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 16,
   },
+  
+  // Message Thread Styles
+  messagesContainer: {
+    flex: 1,
+    backgroundColor: '#E5DDD5', // WhatsApp-like chat background
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F0F0F0',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#DDD',
+  },
+  settingInputBox: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  settingLabel: {
+    fontSize: 10,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  settingInput: {
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 12,
+    color: '#333',
+  },
+  chatHeader: {
+    backgroundColor: '#075E54',
+    color: '#FFF',
+    padding: 10,
+    fontSize: 13,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  chatArea: {
+    flex: 1,
+  },
+  chatAreaContent: {
+    padding: 12,
+  },
+  emptyInbox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 100,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#777',
+    fontWeight: 'bold',
+  },
+  emptySubText: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
+  },
+  bubbleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 10,
+    width: '100%',
+  },
+  bubble: {
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  bubbleSender: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#075E54',
+    marginBottom: 2,
+  },
+  bubbleText: {
+    fontSize: 14,
+    color: '#262626',
+    lineHeight: 18,
+  },
+  bubbleTime: {
+    fontSize: 9,
+    color: '#999',
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  backBtn: {
+    backgroundColor: '#075E54',
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  backBtnText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  }
 });

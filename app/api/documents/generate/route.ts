@@ -52,14 +52,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid document type" }, { status: 400 });
     }
 
-    // Output PDF as ArrayBuffer
-    const pdfOutput = pdfDoc.output("arraybuffer");
+    // Output PDF as ArrayBuffer and convert to base64 data URI
+    const pdfArrayBuffer = pdfDoc.output("arraybuffer");
+    const pdfBase64 = Buffer.from(pdfArrayBuffer).toString("base64");
+    const pdfDataUri = `data:application/pdf;base64,${pdfBase64}`;
 
-    return new Response(pdfOutput, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${docType}_${parcelId}.pdf"`,
-      },
+    // Generate simulated/mock IPFS hash and transaction hash
+    const ipfsHash = "Qm" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const txHash = "0x" + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+
+    return NextResponse.json({
+      success: true,
+      ipfsHash,
+      txHash,
+      pdfUrl: pdfDataUri
     });
   } catch (error: any) {
     console.error("[Document Generation Error]:", error);

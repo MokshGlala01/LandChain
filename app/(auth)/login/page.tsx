@@ -1,12 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { toast } from 'sonner'
-import { GoogleButton } from '@/components/auth/GoogleButton'
-import { AuthDivider } from '@/components/auth/AuthDivider'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,7 +12,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [showGoogleModal, setShowGoogleModal] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const err = params.get('error')
+      if (err) {
+        if (err === 'AccessDenied' || err === 'CallbackRouteError') {
+          setError('Google account is not registered. Please create an account first.')
+        } else if (err === 'OAuthAccountNotLinked') {
+          setError('This email is already registered with a password. Please sign in using your email and password.')
+        } else if (err === 'Configuration') {
+          setError('Google OAuth access denied. Ensure this Google account is added as a "Test User" on your Google Console OAuth Consent Screen.')
+        } else {
+          setError('Authentication failed. Please try again.')
+        }
+      }
+    }
+  }, [])
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,159 +64,110 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      // Check if credentials are configured
-      const res = await fetch('/api/auth/config')
-      const data = await res.json()
-      if (!data.isConfigured) {
-        setShowGoogleModal(true)
-        return
-      }
+      // Set short-lived cookie to inform NextAuth signIn callback that this is a sign-in flow
+      document.cookie = "landchain_oauth_flow=signin; path=/; max-age=60; SameSite=Lax";
       await signIn('google', { callbackUrl: '/auth/redirect' })
     } catch (err: any) {
       toast.error('Google login failed.')
     }
   }
 
-  const handleMockGoogleLogin = async (emailToUse = 'mokshgala.ijs009@gmail.com') => {
-    setLoading(true)
-    setError(null)
-    setShowGoogleModal(false)
-    try {
-      const result = await signIn('credentials', {
-        email: emailToUse,
-        isMockGoogle: 'true',
-        redirect: false
-      })
-
-      if (result?.error) {
-        setError('Mock Google login failed.')
-        setLoading(false)
-        return
-      }
-
-      toast.success('Successfully logged in with Mock Google!')
-      router.push('/auth/redirect')
-    } catch (err: any) {
-      console.error(err)
-      setError(err.message || 'An unexpected error occurred.')
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="flex flex-col space-y-6">
-      <div className="auth-header flex flex-col items-center text-center">
-        <img src="/logo.png" alt="LandChain Logo" className="w-12 h-12 object-contain mb-3" />
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Sign in to LandChain</h1>
-        <p className="text-sm text-slate-500">Manage your land records securely</p>
+      {/* Google Logo & Header */}
+      <div className="flex flex-col items-center text-center space-y-3">
+        {/* Google logo "G" */}
+        <svg width="40" height="40" viewBox="0 0 24 24" className="shrink-0 mb-1">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <h1 className="text-2xl font-normal text-slate-800 dark:text-slate-100 font-sans tracking-tight">Sign in</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400">to continue to LandChain</p>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 text-xs font-semibold rounded-xl flex items-center space-x-2 border border-red-100 dark:border-red-900/30">
+        <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 text-xs font-semibold rounded-lg border border-red-100 dark:border-red-900/30">
           <span>{error}</span>
         </div>
       )}
 
-      {/* Google Button */}
-      <GoogleButton onClick={handleGoogleLogin} label="Continue with Google" />
+      {/* Google Account Sign-In Button */}
+      <button 
+        type="button" 
+        onClick={handleGoogleLogin} 
+        className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md py-2.5 px-4 font-sans text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Sign in with Google Account</span>
+      </button>
 
-      <AuthDivider />
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-[0.5px] bg-slate-200 dark:bg-slate-800"></div>
+        <span className="text-xs text-slate-400 font-medium uppercase tracking-widest">or</span>
+        <div className="flex-1 h-[0.5px] bg-slate-200 dark:bg-slate-800"></div>
+      </div>
 
       <form onSubmit={handleCredentialsSubmit} className="space-y-4" noValidate>
-        <div className="field">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+        {/* Email Field */}
+        <div className="relative">
           <input
             type="email"
-            placeholder="you@example.com"
+            placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full mt-1 px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-4 py-3 bg-transparent border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-colors"
           />
         </div>
 
-        <div className="field">
-          <div className="flex justify-between items-center">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Password</label>
-            <Link href="/forgot-password" style={{ fontSize: 11 }} className="text-emerald-600 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
+        {/* Password Field */}
+        <div className="relative border-b-0">
           <input
             type="password"
-            placeholder="••••••••"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full mt-1 px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-4 py-3 bg-transparent border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-colors"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary flex justify-center items-center gap-2"
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+        <div className="flex justify-end">
+          <Link href="/forgot-password" className="text-xs font-semibold text-[#1a73e8] hover:underline">
+            Forgot password?
+          </Link>
+        </div>
+
+        {/* Actions Row */}
+        <div className="flex items-center justify-between pt-3">
+          <Link 
+            href="/register" 
+            className="text-sm font-semibold text-[#1a73e8] hover:text-[#1557b0] transition-colors"
+          >
+            Create account
+          </Link>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-semibold text-sm rounded-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+          >
+            {loading ? (
+              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span>Signing in...</span>
-            </>
-          ) : (
-            <span>Sign In</span>
-          )}
-        </button>
-      </form>
-
-      <div className="text-center text-xs text-slate-500 pt-2">
-        Don't have an account?{' '}
-        <Link href="/register" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
-          Create one →
-        </Link>
-      </div>
-
-      {showGoogleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center space-x-3 text-amber-500">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Google Credentials Pending</h3>
-            </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Your local <code className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs text-rose-600 dark:text-rose-400">.env.local</code> contains Google Client ID placeholder values. Continuing with the actual Google login will trigger an <strong>invalid_client (Error 401)</strong>.
-            </p>
-            <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={() => handleMockGoogleLogin('mokshgala.ijs009@gmail.com')}
-                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/10"
-              >
-                <span>✨ Use Mock Developer Login</span>
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  setShowGoogleModal(false)
-                  await signIn('google', { callbackUrl: '/auth/redirect' })
-                }}
-                className="w-full py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition-all"
-              >
-                Continue with Real Google OAuth
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowGoogleModal(false)}
-                className="w-full py-2.5 px-4 text-center text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+            ) : (
+              <span>Next</span>
+            )}
+          </button>
         </div>
-      )}
+      </form>
     </div>
   )
 }

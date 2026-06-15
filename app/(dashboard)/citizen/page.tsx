@@ -43,10 +43,42 @@ interface Property {
 }
 
 const stateDistricts: Record<string, string[]> = {
-  "Uttar Pradesh": ["Gautam Buddha Nagar (Noida)", "Ghaziabad", "Lucknow", "Kanpur"],
-  "Delhi": ["South Delhi", "New Delhi", "North Delhi", "West Delhi"],
-  "Haryana": ["Gurugram", "Faridabad", "Sonipat", "Rohtak"],
-  "Maharashtra": ["Mumbai Suburban", "Mumbai City", "Pune", "Thane"],
+  "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Tirupati"],
+  "Arunachal Pradesh": ["Itanagar", "Tawang", "Changlang", "West Kameng", "Papum Pare"],
+  "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat", "Nagaon", "Tezpur"],
+  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Darbhanga", "Nalanda"],
+  "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Durg", "Rajnandgaon"],
+  "Goa": ["North Goa", "South Goa"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar", "Bhavnagar"],
+  "Haryana": ["Gurugram", "Faridabad", "Sonipat", "Rohtak", "Panipat", "Ambala", "Panchkula"],
+  "Himachal Pradesh": ["Shimla", "Dharamshala", "Manali", "Solan", "Mandi", "Kangra"],
+  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh", "Deoghar"],
+  "Karnataka": ["Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi"],
+  "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Alappuzha"],
+  "Madhya Pradesh": ["Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain", "Sagar"],
+  "Maharashtra": ["Mumbai Suburban", "Mumbai City", "Pune", "Thane", "Nagpur", "Nashik", "Aurangabad", "Navi Mumbai"],
+  "Manipur": ["Imphal East", "Imphal West", "Thoubal", "Bishnupur", "Churachandpur"],
+  "Meghalaya": ["Shillong", "Tura", "Jowai", "Nongpoh", "Williamnagar"],
+  "Mizoram": ["Aizawl", "Lunglei", "Saiha", "Champhai", "Kolasib"],
+  "Nagaland": ["Dimapur", "Kohima", "Mokokchung", "Tuensang", "Wokha"],
+  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Puri", "Sambalpur", "Balasore"],
+  "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali"],
+  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Bikaner", "Ajmer"],
+  "Sikkim": ["Gangtok", "Gyalshing", "Namchi", "Mangan"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Trichy", "Salem", "Tirunelveli"],
+  "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam", "Secunderabad"],
+  "Tripura": ["Agartala", "Dharmanagar", "Udaipur", "Kailasahar", "Ambassa"],
+  "Uttar Pradesh": ["Gautam Buddha Nagar (Noida)", "Ghaziabad", "Lucknow", "Kanpur", "Varanasi", "Agra", "Prayagraj", "Meerut"],
+  "Uttarakhand": ["Dehradun", "Haridwar", "Nainital", "Haldwani", "Roorkee", "Rishikesh"],
+  "West Bengal": ["Kolkata", "Howrah", "Darjeeling", "Siliguri", "Asansol", "Durgapur"],
+  "Andaman and Nicobar Islands": ["Port Blair", "South Andaman", "North and Middle Andaman", "Nicobar"],
+  "Chandigarh": ["Chandigarh"],
+  "Dadra and Nagar Haveli and Daman and Diu": ["Daman", "Diu", "Silvassa"],
+  "Delhi": ["New Delhi", "South Delhi", "North Delhi", "West Delhi", "East Delhi", "Central Delhi"],
+  "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Kathua", "Samba"],
+  "Ladakh": ["Leh", "Kargil"],
+  "Lakshadweep": ["Kavaratti", "Agatti", "Minicoy"],
+  "Puducherry": ["Puducherry", "Karaikal", "Mahe", "Yanam"]
 };
 
 export default function CitizenDashboard() {
@@ -644,8 +676,15 @@ export default function CitizenDashboard() {
                       <label className="text-[9px] font-heading font-bold uppercase text-slate-400">State</label>
                       <select
                         value={selectedState}
-                        onChange={(e) => setSelectedState(e.target.value)}
-                        className="w-full px-2 py-2 bg-gray-50 border border-slate-200 rounded-element focus:outline-none"
+                        onChange={(e) => {
+                          const stateVal = e.target.value;
+                          setSelectedState(stateVal);
+                          const districts = stateDistricts[stateVal] || [];
+                          if (districts.length > 0) {
+                            setDistrict(districts[0]);
+                          }
+                        }}
+                        className="w-full px-2 py-2 bg-gray-50 border border-slate-200 rounded-element focus:outline-none focus:ring-1 focus:ring-brand"
                       >
                         {Object.keys(stateDistricts).map((st) => (
                           <option key={st}>{st}</option>
@@ -697,6 +736,32 @@ export default function CitizenDashboard() {
                   <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-element text-[10px] text-slate-500 leading-normal">
                     Point bounds coordinates. Click inside the visual region grid below to simulate parcel vertices coordinates.
                   </div>
+
+                  {!walletAddress ? (
+                    <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-element flex flex-col gap-2">
+                      <span className="text-[10px] font-semibold text-red-700 dark:text-red-400">
+                        Please connect your web3 wallet to submit the transaction.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const addr = await connectWallet();
+                          if (addr) {
+                            setFormError("");
+                            toast.success(`Wallet connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`);
+                          }
+                        }}
+                        className="w-full py-1.5 bg-[#0F6E56] hover:bg-[#075E54] text-white rounded-element text-[9px] font-heading font-extrabold uppercase transition-all flex items-center justify-center cursor-pointer font-bold"
+                      >
+                        Connect Web3 Wallet
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 rounded-element text-[9px] text-green-700 dark:text-green-400 font-mono flex justify-between items-center">
+                      <span>Wallet: {walletAddress.slice(0, 8)}...{walletAddress.slice(-8)}</span>
+                      <span className="px-1.5 py-0.5 bg-green-200 dark:bg-green-900 text-[8px] font-bold text-green-800 dark:text-green-300 rounded uppercase">Connected</span>
+                    </div>
+                  )}
 
                   <div
                     onClick={(e) => {
